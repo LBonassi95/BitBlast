@@ -12,7 +12,7 @@
   (:init
 		(= (x b0) 3)
 		(= (y b0) 0)
-		(= (d p0) -370)
+		(= (d p0) -50)
 	)
 
 	(:goal
@@ -22,15 +22,5 @@
 		)
 	)
 
-
-(:constraints (and 
-    (forall (?b -boat ?t -person) 
-			(at-most-once ( and  (>= (+ (x ?b) (y ?b)) (d ?t)) 
-								(>= (- (y ?b) (x ?b)) (d ?t)) 
-								(<= (+ (x ?b) (y ?b)) (+ (d ?t) 25)) 
-								(<= (- (y ?b) (x ?b)) (+ (d ?t) 25))
-						)
-						))
-    ))
 
 )
