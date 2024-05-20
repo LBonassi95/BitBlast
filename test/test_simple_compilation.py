@@ -1,7 +1,4 @@
-import pytest
 from pathlib import Path
-from unified_planning.io.pddl_reader import PDDLReader
-from ncocoa.grounding import ground
 from unified_planning.model.problem import Problem
 from ncocoa.simple_compilation import compile
 
