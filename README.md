@@ -8,6 +8,6 @@ Install the unified planning library
 
 ```pip install unified-planning```
 
-Install nCOCOA (in developer mode)
+Install BitBlast (in developer mode)
 
 ```pip install -e ./nCOCOA/```
