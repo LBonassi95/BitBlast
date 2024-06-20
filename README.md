@@ -1,4 +1,4 @@
-# nCOCOA
+# BitBlast
 
 Cocoa for numeric planning
 
