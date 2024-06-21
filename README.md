@@ -10,4 +10,4 @@ Install the unified planning library
 
 Install BitBlast (in developer mode)
 
-```pip install -e ./nCOCOA/```
+```pip install -e ./BitBlast/```
