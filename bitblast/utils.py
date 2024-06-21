@@ -32,15 +32,18 @@ def get_constants(problem: Problem, eff_num: Set[Effect]) -> Set[int]:
 
 
 def bitblast_int(value: int, nbits: int):
-    return [bool(int(bit)) for bit in list(np.binary_repr(value, width=nbits))]
+    bits = [bool(int(bit)) for bit in list(np.binary_repr(value, width=nbits))]
+    # Bits are reversed, so we need to reverse them
+    bits.reverse()
+    return bits
 
 
 def get_bitblasted_variables(numeric_variables: Set[Fluent], 
                              constants: Set[int], 
                              nbits: int) -> Tuple[Dict[Fluent, List[Fluent]], Dict[int, List[Fluent]]]:
     
-    bitblasted_variables = {var: [Fluent(f"{var.name}_{i}") for i in reversed(range(nbits))] for var in numeric_variables}
-    bitblasted_constants = {const: [Fluent(f"q{id}_{i}") for i in reversed(range(nbits))] for id, const in enumerate(constants)}
+    bitblasted_variables = {var: [Fluent(f"{var.name}_{i}") for i in range(nbits)] for var in numeric_variables}
+    bitblasted_constants = {const: [Fluent(f"q{id}_{i}") for i in range(nbits)] for id, const in enumerate(constants)}
     return bitblasted_variables, bitblasted_constants
 
 

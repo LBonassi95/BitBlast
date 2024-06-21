@@ -1,0 +1,5 @@
+(define (problem compiled-problem)
+ (:domain compiled-domain)
+ (:init (x_0) (x_1) (x_3) (q0_0))
+ (:goal (and (not (x_3))))
+)

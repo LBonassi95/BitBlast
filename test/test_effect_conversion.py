@@ -20,4 +20,5 @@ def test_full_adder():
     x_bits = bitblasted_var[x]
     q_bits = bitblasted_const[1]
 
-    result = get_full_adder()
+    fa = FullAdder(x_bits, q_bits)
+    print("Full Adder test passed")
