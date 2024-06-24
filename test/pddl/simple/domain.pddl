@@ -5,7 +5,9 @@
 ;remove requirements that are not needed
 (:requirements :adl :numeric-fluents)
 
-
+(:predicates
+    (b)
+)
 
 (:functions ;todo: define numeric functions here
 

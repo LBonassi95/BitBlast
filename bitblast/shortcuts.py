@@ -11,6 +11,9 @@ def is_propositional_effect(eff: Effect) -> bool:
 def is_int_constant(v: FNode) -> bool:
     return v.is_int_constant()
 
+def is_bool_constant(v: FNode) -> bool:
+    return v.is_bool_constant()
+
 def constant_value(v: FNode) -> int:
     return v.constant_value()
 
