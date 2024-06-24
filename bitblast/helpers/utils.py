@@ -24,13 +24,8 @@ def get_all_eff_num(problem: Problem):
 
 
 def get_constants(problem: Problem, eff_num: Set[Effect]) -> Set[int]:
-    constants = {
-        constant_value(eff.value) for eff in eff_num
-    }
-    init_constants = {
-        constant_value(v) for v in problem.initial_values.values() if is_int_constant(v)
-    }
-
+    constants = {eff.value for eff in eff_num}
+    init_constants = {v for v in problem.initial_values.values() if is_int_constant(v)}
     return constants, init_constants
 
 
@@ -42,38 +37,38 @@ def bitblast_int(value: int, nbits: int) -> List[bool]:
     bits.reverse()
     return bits
 
-
-def get_bin_variables(numeric_variables: Set[Fluent], 
-                        constants: Set[int], 
-                        nbits: int) -> Tuple[Dict[Fluent, List[Fluent]], Dict[FNode, List[FNode]], Dict[int, List[Fluent]], Dict[int, List[FNode]]]:
+def get_bit_variables(numeric_variables: Set[Fluent], 
+                      constants: Set[int], 
+                      nbits: int) -> Tuple[List[Fluent], Dict[FNode, List[FNode]]]:
     
-    bin_fluents = {var: [Fluent(f"{var.name}_{i}") for i in range(nbits)] for var in numeric_variables}
-    bin_constants = {q: [Fluent(f"q{id}_{i}") for i in range(nbits)] for id, q in enumerate(constants)}
-    bin_fluents_exp = {FluentExp(fluent): [FluentExp(fl_bit) for fl_bit in bin_fluents[fluent]] for fluent in bin_fluents.keys()}
-    bin_constants_exp = {q: [FluentExp(q_bit) for q_bit in bin_constants[q]] for q in bin_constants.keys()}
-    return bin_fluents, bin_fluents_exp, bin_constants, bin_constants_exp
+    bit_fluents = {var: [Fluent(f"{var.name}_{i}") for i in range(nbits)] for var in numeric_variables}
+    bit_constants = {q: [Fluent(f"q{id}_{i}") for i in range(nbits)] for id, q in enumerate(constants)}
 
+    new_fluents = [item for sublist in bit_fluents.values() for item in sublist] + \
+                  [item for sublist in bit_constants.values() for item in sublist]
+    new_variables_map = {FluentExp(fluent): [FluentExp(fl_bit) for fl_bit in bit_fluents[fluent]] for fluent in bit_fluents.keys()}
+    new_variables_map.update({q: [FluentExp(q_bit) for q_bit in bit_constants[q]] for q in bit_constants.keys()})
+    return new_fluents, new_variables_map
 
 def set_initial_values(initial_values: Dict[Fluent, bool], var_bits: List[FNode], bits: List[bool]) -> None:
     for var, bit in zip(var_bits, bits):
         initial_values[var] = Bool(bit)
 
 
-def get_bin_initial_state(bin_fluent_exp: Dict[FNode, List[FNode]], 
-                          bin_constants_exp: Dict[int, List[FNode]], 
+def get_bin_initial_state(new_variables_map: Dict[FNode, List[FNode]],
                           initial_values: Dict,
                           nbits: int) -> Dict[Fluent, bool]:
 
     # Copy all boolean initial values
     new_initial_values = {k: v for k, v in initial_values.items() if is_bool_constant(v)}
 
-    for var, var_bits in bin_fluent_exp.items():
-        bits = bitblast_int(constant_value(initial_values[var]), nbits)
+    for var, var_bits in new_variables_map.items():
+        if is_int_constant(var):
+            bits = bitblast_int(constant_value(var), nbits)
+        else:
+            assert var.is_fluent_exp()
+            bits = bitblast_int(constant_value(initial_values[var]), nbits)
         set_initial_values(new_initial_values, var_bits, bits)
-
-    for const, const_bits in bin_constants_exp.items():
-        bits = bitblast_int(const, nbits)
-        set_initial_values(new_initial_values, const_bits, bits)
 
     return new_initial_values
 
@@ -103,7 +98,7 @@ def check_ge_zero(condition: FNode) -> bool:
 
 def convert_ge_zero(condition: FNode, bin_fluents_exp: Dict[FNode, List[FNode]]) -> FNode:
     var = condition.args[1]
-    return sign_bit(bin_fluents_exp[var])
+    return Not(sign_bit(bin_fluents_exp[var]))
 
 
 def convert_condition(condition: FNode, bin_fluents_exp: Dict[FNode, List[FNode]]) -> FNode:
@@ -123,10 +118,9 @@ def convert_condition(condition: FNode, bin_fluents_exp: Dict[FNode, List[FNode]
         # A boolean fluent expression
         return condition
     
-def add_bin_effect(new_action: InstantaneousAction, eff: Effect, bin_fluents_exp: Dict[FNode, List[FNode]], bin_constants_exp: Dict[FNode, List[FNode]]):
-    value = constant_value(eff.value)
-    x_bits = bin_fluents_exp[eff.fluent]
-    q_bits = bin_constants_exp[value]
+def add_bin_effect(new_action: InstantaneousAction, eff: Effect, new_variables_map: Dict[FNode, List[FNode]]):
+    x_bits = new_variables_map[eff.fluent]
+    q_bits = new_variables_map[eff.value]
     circuit = full_adder_circuit(x_bits, q_bits)
     sums = [circuit["z"][i] for i in range(len(x_bits))]
     for i in range(len(x_bits)):
@@ -134,17 +128,17 @@ def add_bin_effect(new_action: InstantaneousAction, eff: Effect, bin_fluents_exp
         new_action.add_effect(condition=Not(sums[i]), fluent=x_bits[i], value=FALSE())
 
 
-def convert_action(act: InstantaneousAction, bin_fluents_exp: Dict[FNode, List[FNode]], bin_constants_exp: Dict[FNode, List[FNode]]) -> InstantaneousAction:
+def convert_action(act: InstantaneousAction, new_variables_map: Dict[FNode, List[FNode]]) -> InstantaneousAction:
     
     new_action = InstantaneousAction(act.name)
     numeric_effects = effects_num(action=act)
 
     for precondition in act.preconditions:
         assert check_condition(precondition)
-        new_action.add_precondition(convert_condition(precondition, bin_fluents_exp))
+        new_action.add_precondition(convert_condition(precondition, new_variables_map))
 
     for eff in numeric_effects:
-        add_bin_effect(new_action, eff, bin_fluents_exp, bin_constants_exp)
+        add_bin_effect(new_action, eff, new_variables_map)
     
     for eff in effects_prop(action=act):
         new_action.add_effect(condition=eff.condition, fluent=eff.fluent, value=eff.value)

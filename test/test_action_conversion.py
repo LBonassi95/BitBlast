@@ -19,10 +19,10 @@ act.add_increase_effect(condition=TRUE(), fluent=FluentExp(x), value=Int(5))
 act.add_effect(condition=TRUE(), fluent=FluentExp(b), value=True)
 
 
-bin_fluents, bin_fluents_exp, bin_constants, bin_constants_exp = get_bin_variables({x}, {5}, nbits)
+_, new_variables_map = get_bit_variables({x}, {Int(5)}, nbits)
 
 
-sign_x1 = bin_fluents_exp[FluentExp(x)][nbits-1]
+sign_x1 = new_variables_map[FluentExp(x)][nbits-1]
 
 def test_action_conversion():
 
@@ -33,12 +33,12 @@ def test_action_conversion():
     sums = [circuit["z"][i] for i in range(nbits)]
 
     act_expected = InstantaneousAction('test')
-    act_expected.add_precondition(sign_x1)
+    act_expected.add_precondition(Not(sign_x1))
     for i in range(nbits):
         act_expected.add_effect(condition=sums[i], fluent=x_bits[i], value=TRUE())
         act_expected.add_effect(condition=Not(sums[i]), fluent=x_bits[i], value=FALSE())
 
     act_expected.add_effect(condition=TRUE(), fluent=FluentExp(b), value=True)
 
-    new_action = convert_action(act, bin_fluents_exp, bin_constants_exp)
+    new_action = convert_action(act, new_variables_map)
     assert new_action == act_expected
