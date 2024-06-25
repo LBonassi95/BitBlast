@@ -1,10 +1,39 @@
 from unified_planning.shortcuts import *
 from typing import List, Tuple, Set, Dict
-from bitblast.shortcuts import *
-from bitblast.helpers.full_adder import *
 import numpy as np
 
 OVERFLOW_MSG = "Overflow Detected: the value {value} cannot be represented with {nbits} bits"
+
+def is_numeric_effect(eff: Effect) -> bool:
+    return eff.is_increase()
+
+def is_propositional_effect(eff: Effect) -> bool:
+    assert isinstance(eff.value, FNode)
+    return eff.value.is_bool_constant()
+
+def is_int_constant(v: FNode) -> bool:
+    return v.is_int_constant()
+
+def is_bool_constant(v: FNode) -> bool:
+    return v.is_bool_constant()
+
+def constant_value(v: FNode) -> int:
+    return v.constant_value()
+
+def is_numeric_fluent(fl: Fluent) -> bool:
+    return fl.type == RealType() or fl.type == IntType()
+
+def action_name(action: InstantaneousAction) -> str:
+    return action.name
+
+def effects(action: InstantaneousAction):
+    return set(action.effects)
+
+def effects_num(action: InstantaneousAction):
+    return {eff for eff in effects(action) if is_numeric_effect(eff)}
+
+def effects_prop(action: InstantaneousAction):
+    return {eff for eff in effects(action) if is_propositional_effect(eff)}
 
 def get_action_effect_map(problem: Problem) -> Dict[str, set[Effect]]:
     return {action_name(a): effects(a) for a in problem.actions}
@@ -22,12 +51,10 @@ def get_all_eff_num(problem: Problem):
 
     return eff_num
 
-
 def get_constants(problem: Problem, eff_num: Set[Effect]) -> Set[int]:
     constants = {eff.value for eff in eff_num}
     init_constants = {v for v in problem.initial_values.values() if is_int_constant(v)}
     return constants, init_constants
-
 
 def bitblast_int(value: int, nbits: int) -> List[bool]:
     bits = [bool(int(bit)) for bit in list(np.binary_repr(value, width=nbits))]
@@ -54,7 +81,6 @@ def set_initial_values(initial_values: Dict[Fluent, bool], var_bits: List[FNode]
     for var, bit in zip(var_bits, bits):
         initial_values[var] = Bool(bit)
 
-
 def get_bin_initial_state(new_variables_map: Dict[FNode, List[FNode]],
                           initial_values: Dict,
                           nbits: int) -> Dict[Fluent, bool]:
@@ -72,76 +98,5 @@ def get_bin_initial_state(new_variables_map: Dict[FNode, List[FNode]],
 
     return new_initial_values
 
-
-def check_condition(condition: FNode) -> bool:
-    if condition.is_and() or condition.is_or():
-        return all(check_condition(c) for c in condition.args)
-    if condition.is_not():
-        return check_condition(condition.args[0])
-    if condition.is_fluent_exp():
-        return True
-    if condition.is_le():
-        return check_ge_zero(condition)
-    return False
-
-
 def sign_bit(bits: List[FNode]) -> FNode:
     return bits[-1]
-
-
-def check_ge_zero(condition: FNode) -> bool:
-    return condition.is_le() and \
-           condition.args[0].is_int_constant() and \
-           condition.args[0].constant_value() == 0 and \
-           condition.args[1].is_fluent_exp()
-
-
-def convert_ge_zero(condition: FNode, bin_fluents_exp: Dict[FNode, List[FNode]]) -> FNode:
-    var = condition.args[1]
-    return Not(sign_bit(bin_fluents_exp[var]))
-
-
-def convert_condition(condition: FNode, bin_fluents_exp: Dict[FNode, List[FNode]]) -> FNode:
-    """
-    Convert a condition to a bitblasted condition.
-    Precondition: check_condition(condition) == True
-    """
-    if condition.is_and():
-        return And(*[convert_condition(c, bin_fluents_exp) for c in condition.args])
-    elif condition.is_or():
-        return Or(*[convert_condition(c, bin_fluents_exp) for c in condition.args])
-    elif condition.is_not():
-        return Not(convert_condition(condition.args[0], bin_fluents_exp))
-    elif condition.is_le():
-        return convert_ge_zero(condition, bin_fluents_exp)
-    else:
-        # A boolean fluent expression
-        return condition
-    
-def add_bin_effect(new_action: InstantaneousAction, eff: Effect, new_variables_map: Dict[FNode, List[FNode]]):
-    x_bits = new_variables_map[eff.fluent]
-    q_bits = new_variables_map[eff.value]
-    circuit = full_adder_circuit(x_bits, q_bits)
-    sums = [circuit["z"][i] for i in range(len(x_bits))]
-    for i in range(len(x_bits)):
-        new_action.add_effect(condition=sums[i], fluent=x_bits[i], value=TRUE())
-        new_action.add_effect(condition=Not(sums[i]), fluent=x_bits[i], value=FALSE())
-
-
-def convert_action(act: InstantaneousAction, new_variables_map: Dict[FNode, List[FNode]]) -> InstantaneousAction:
-    
-    new_action = InstantaneousAction(act.name)
-    numeric_effects = effects_num(action=act)
-
-    for precondition in act.preconditions:
-        assert check_condition(precondition)
-        new_action.add_precondition(convert_condition(precondition, new_variables_map))
-
-    for eff in numeric_effects:
-        add_bin_effect(new_action, eff, new_variables_map)
-    
-    for eff in effects_prop(action=act):
-        new_action.add_effect(condition=eff.condition, fluent=eff.fluent, value=eff.value)
-
-    return new_action
-    

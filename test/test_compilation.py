@@ -1,8 +1,7 @@
 from unified_planning.io.pddl_reader import PDDLReader
 from unified_planning.model import Problem
 from unified_planning.shortcuts import *
-from bitblast.helpers.utils import *
-from bitblast.helpers.full_adder import *
+from bitblast.helpers import *
 from pathlib import Path
 import os
 import numpy as np
@@ -18,7 +17,7 @@ def test_compilation():
     problem = reader.parse_problem(domain_path, problem_path)
 
     nbits = 4
-    compilation = BaseCompiler(problem, nbits)
+    compilation = BaseCompiler(problem, nbits, optimized=True)
     new_problem = compilation.get_compiled_problem()
 
     writer = PDDLWriter(new_problem)

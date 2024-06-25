@@ -1,12 +1,12 @@
-from bitblast.helpers.utils import *
-
+from bitblast.helpers import *
 
 class BaseCompiler:
 
-    def __init__(self, problem: Problem, nbits):
+    def __init__(self, problem: Problem, nbits: int, optimized: bool = False):
 
         self.nbits = nbits
         self.problem = problem
+        self.optimized = optimized
         self.numeric_variables = get_numeric_variables(problem)
         self.action_effect_map = get_action_effect_map(problem)
         self.constants, self.init_constants = get_constants(problem, get_all_eff_num(problem))
@@ -25,7 +25,7 @@ class BaseCompiler:
         new_initial_values = get_bin_initial_state(self.new_variables_map, self.problem.initial_values, self.nbits)
 
         # New actions
-        new_actions = [convert_action(action, self.new_variables_map) for action in self.problem.actions]
+        new_actions = [convert_action(action, self.new_variables_map, self.optimized) for action in self.problem.actions]
 
         # New goal
         new_goals = And(*[convert_condition(g, self.new_variables_map) for g in self.problem.goals])
@@ -35,13 +35,17 @@ class BaseCompiler:
 
         new_problem.add_fluents(self.new_fluents)
         
-        for var in self.new_variables_map.values():
-            for var_bit in var:
-                initital_value = new_initial_values[var_bit]
-                new_problem.set_initial_value(var_bit, initital_value)
-
+        for variable in self.new_variables_map.values():
+            for variable_bit in variable:
+                initital_value = new_initial_values[variable_bit]
+                new_problem.set_initial_value(variable_bit, initital_value)
 
         new_problem.add_actions(new_actions)
         new_problem.add_goal(new_goals)
+
+        # Manage Overflow fluent
+        new_problem.add_fluent(OF_FLUENT)
+        new_problem.set_initial_value(OF_FLUENT, FALSE())
+        new_problem.add_goal(Not(OF_FLUENT))
 
         return new_problem

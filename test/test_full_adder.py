@@ -1,9 +1,6 @@
-from unified_planning.io.pddl_reader import PDDLReader
-from unified_planning.model import Problem
 from unified_planning.shortcuts import *
-from bitblast.helpers.utils import *
 from pathlib import Path
-from bitblast.helpers.full_adder import *
+from bitblast.helpers import *
 import numpy as np
 import pytest
 
@@ -39,6 +36,16 @@ def test_full_adder(nbits):
 
     x_bits = [FluentExp(Fluent(f"{x.name}_{i}")) for i in range(nbits)]
     q_bits = [FluentExp(Fluent(f"q{0}_{i}")) for i in range(nbits)]
+
+    expected_circuit = build_ciurcuit(x_bits, q_bits)
+
+    assert full_adder_circuit(x_bits, q_bits) == expected_circuit
+    
+
+def test_full_adder_constant():
+    nbits = 3
+    x_bits = [FluentExp(Fluent(f"{x.name}_{i}")) for i in range(nbits)]
+    q_bits = [TRUE() for _ in range(nbits)]
 
     expected_circuit = build_ciurcuit(x_bits, q_bits)
 

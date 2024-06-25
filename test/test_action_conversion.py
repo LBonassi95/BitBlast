@@ -1,15 +1,12 @@
-from unified_planning.io.pddl_reader import PDDLReader
-from unified_planning.model import Problem
 from unified_planning.shortcuts import *
-from bitblast.helpers.utils import *
-from pathlib import Path
-from bitblast.helpers.full_adder import *
+from bitblast.helpers import *
 import numpy as np
 import pytest
 
 nbits = 5
 
 x = Fluent("x", RealType())
+of = Fluent("OF", BoolType())
 b = Fluent("b", BoolType())
 
 act = InstantaneousAction('test')
@@ -32,13 +29,17 @@ def test_action_conversion():
     circuit = full_adder_circuit(x_bits, q_bits)
     sums = [circuit["z"][i] for i in range(nbits)]
 
+    overflow = Or(And(x_bits[nbits-1], q_bits[nbits-1], Not(circuit["c"][nbits-1])), And(Not(x_bits[nbits-1]), Not(q_bits[nbits-1]), circuit["c"][nbits-1]))
+
     act_expected = InstantaneousAction('test')
     act_expected.add_precondition(Not(sign_x1))
     for i in range(nbits):
         act_expected.add_effect(condition=sums[i], fluent=x_bits[i], value=TRUE())
         act_expected.add_effect(condition=Not(sums[i]), fluent=x_bits[i], value=FALSE())
 
-    act_expected.add_effect(condition=TRUE(), fluent=FluentExp(b), value=True)
+    act_expected.add_effect(condition=overflow, fluent=FluentExp(of), value=TRUE())
+
+    act_expected.add_effect(condition=TRUE(), fluent=FluentExp(b), value=TRUE())
 
     new_action = convert_action(act, new_variables_map)
     assert new_action == act_expected
