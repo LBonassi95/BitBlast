@@ -15,6 +15,8 @@ class BaseCompiler:
         constants_abs = {np.abs(constant_value(q)) for q in self.constants.union(self.init_constants)}
         min_bits = int(np.ceil(np.log2(max(constants_abs) + 1)))
         assert nbits >= min_bits
+        if optimized:
+            self.constants = {}
         
     def get_compiled_problem(self) -> Problem:
 
