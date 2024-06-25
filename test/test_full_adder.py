@@ -50,3 +50,20 @@ def test_full_adder_constant():
     expected_circuit = build_ciurcuit(x_bits, q_bits)
 
     assert full_adder_circuit(x_bits, q_bits) == expected_circuit
+
+
+# def test_full_adder_compact():
+#     nbits = 3
+#     x_bits = [FluentExp(Fluent(f"{x.name}_{i}")) for i in range(nbits)]
+#     q_bits = [FluentExp(Fluent(f"q{0}_{i}")) for i in range(nbits)]
+
+#     compact_circuit = {
+#         FNode(c): {-1: FALSE()},
+#         'z': {0: XOr(XOr(x_bits[0], q_bits[0]), FALSE())}
+    
+#     }
+
+
+#     expected_circuit = build_ciurcuit(x_bits, q_bits)
+
+#     assert full_adder_circuit(x_bits, q_bits) == expected_circuit
