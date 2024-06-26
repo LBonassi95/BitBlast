@@ -1,6 +1,5 @@
 # BitBlast
 
-Cocoa for numeric planning
 
 ## Installation
 
