@@ -3,6 +3,7 @@ from unified_planning.model import Problem
 from unified_planning.engines import CompilationKind
 from unified_planning.shortcuts import *
 from typing import Tuple
+from unified_planning.model.walkers import Substituter
 # from numeric_tcore.achievers_helper import *
 from pathlib import Path
 
@@ -12,7 +13,7 @@ def args_str(args: Tuple[Object]) -> str:
     return SEP.join([str(arg) for arg in args])
 
 
-def fluent_exp_to_fluent(fluent_exp: FNode) -> Fluent:
+def get_ground_fluent(fluent_exp: FNode) -> Fluent:
     assert isinstance(fluent_exp, FNode)
     original_fluent = fluent_exp.fluent()
     fluent_type = original_fluent.type
@@ -20,15 +21,18 @@ def fluent_exp_to_fluent(fluent_exp: FNode) -> Fluent:
         return Fluent(f"{original_fluent.name}{SEP}{args_str(args=fluent_exp.args)}", fluent_type)
     else:
         return Fluent(f"{original_fluent.name}", fluent_type)
+    
 
-def get_explicit_fluents(problem: Problem) -> List[Fluent]:
-    explicit_fluents = []
+def get_ground_fluents(problem: Problem) -> List[Fluent]:
+    ground_fluents = []
+    substitution_map = {}
     
     # TODO CHECK THIS!!!!!!!!
     for var in problem.initial_values.keys():
-        explicit_fluents.append(fluent_exp_to_fluent(var))
+        ground_fluents.append(get_ground_fluent(var))
+        substitution_map[var] = FluentExp(get_ground_fluent(var))
     
-    return explicit_fluents
+    return ground_fluents, substitution_map
 
 def normalize(problem: Problem) -> Problem:
     grounder = Compiler(compilation_kind = CompilationKind.GROUNDING)
@@ -44,10 +48,22 @@ def normalize(problem: Problem) -> Problem:
     assert isinstance(ground_problem, Problem)
 
     # TODO: transform the problem to a RT taks
-    # explicit_fluents = get_explicit_fluents(ground_problem)
 
+    # ground_fluents, ground_fluents_map = get_ground_fluents(ground_problem)
+    # subsistuter = Substituter(get_environment())
     # normalized_problem = Problem(name="normalized")
-    # normalized_problem.add_fluents(explicit_fluents)
+    # normalized_problem.add_fluents(ground_fluents)
+
+    # normalized_actions = []
+    # for act in ground_problem.actions:
+    #     assert isinstance(act, InstantaneousAction)
+    #     new_act = InstantaneousAction(act.name)
+    #     new_preconditions = [subsistuter.substitute(pre, ground_fluents_map) for pre in act.preconditions]
+    #     for pre in new_preconditions:
+    #         new_act.add_precondition(pre)
+    #     print()
+        
+        
     # normalized_problem.add_actions(ground_problem.actions)
     # for g in ground_problem.goals:
     #     normalized_problem.add_goal(g)

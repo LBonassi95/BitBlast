@@ -14,7 +14,7 @@ x2 = FluentExp(Fluent("x2", RealType()))
 b1 = FluentExp(Fluent("b1", BoolType()))
 b2 = FluentExp(Fluent("b2", BoolType()))
 
-new_fluent, new_variables_map = get_bit_variables({x1_fluent, x2_fluent}, {}, bits)
+new_fluent, new_variables_map = get_bit_variables({x1, x2}, {}, bits)
 
 
 sign_x1 = new_variables_map[x1][bits-1]

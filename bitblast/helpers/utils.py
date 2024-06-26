@@ -39,7 +39,17 @@ def get_action_effect_map(problem: Problem) -> Dict[str, set[Effect]]:
     return {action_name(a): effects(a) for a in problem.actions}
 
 def get_numeric_variables(problem: Problem) -> Set[Fluent]:
-    return set(fl for fl in problem.fluents if is_numeric_fluent(fl))
+    ground_fluents = set()
+    
+    # TODO CHECK THIS!!!!!!!!
+    for var in problem.initial_values.keys():
+        assert isinstance(var, FNode)
+        if is_numeric_fluent(var.fluent()):
+            ground_fluents.add(var)
+    
+    return ground_fluents
+    # return set(fl for fl in problem.fluents if is_numeric_fluent(fl))
+    
 
 def get_all_eff_num(problem: Problem):
 
@@ -64,16 +74,29 @@ def bitblast_int(value: int, nbits: int) -> List[bool]:
     bits.reverse()
     return bits
 
-def get_bit_variables(numeric_variables: Set[Fluent], 
+SEP = "--"
+
+def args_str(args: Tuple[Object]) -> str:
+    return SEP.join([str(arg) for arg in args])
+
+
+def get_ground_fluent_name(fluent_exp: FNode) -> Fluent:
+    original_fluent = fluent_exp.fluent()
+    if len(fluent_exp.args) > 0:
+        return f"{original_fluent.name}{SEP}{args_str(args=fluent_exp.args)}"
+    else:
+        return f"{original_fluent.name}"
+
+def get_bit_variables(numeric_variables: Set[FNode], 
                       constants: Set[int], 
                       nbits: int) -> Tuple[List[Fluent], Dict[FNode, List[FNode]]]:
     
-    bit_fluents = {var: [Fluent(f"{var.name}_{i}") for i in range(nbits)] for var in numeric_variables}
+    bit_fluents = {var: [Fluent(f"{get_ground_fluent_name(var)}_{i}") for i in range(nbits)] for var in numeric_variables}
     bit_constants = {q: [Fluent(f"q{id}_{i}") for i in range(nbits)] for id, q in enumerate(constants)}
 
     new_fluents = [item for sublist in bit_fluents.values() for item in sublist] + \
                   [item for sublist in bit_constants.values() for item in sublist]
-    new_variables_map = {FluentExp(fluent): [FluentExp(fl_bit) for fl_bit in bit_fluents[fluent]] for fluent in bit_fluents.keys()}
+    new_variables_map = {fluent: [FluentExp(fl_bit) for fl_bit in bit_fluents[fluent]] for fluent in bit_fluents.keys()}
     new_variables_map.update({q: [FluentExp(q_bit) for q_bit in bit_constants[q]] for q in bit_constants.keys()})
     return new_fluents, new_variables_map
 

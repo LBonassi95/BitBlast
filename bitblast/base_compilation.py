@@ -8,7 +8,6 @@ class BaseCompiler:
         self.problem = problem
         self.optimized = optimized
         self.numeric_variables = get_numeric_variables(problem)
-        self.action_effect_map = get_action_effect_map(problem)
         self.constants, self.init_constants = get_constants(problem, get_all_eff_num(problem))
 
 
@@ -36,14 +35,19 @@ class BaseCompiler:
         new_problem = Problem(name='compiled')
 
         new_problem.add_fluents(self.new_fluents)
+
+        # Add all the original boolean fluents
+        boolean_fluents = set(fl for fl in self.problem.fluents if fl.type == BoolType())
+        new_problem.add_fluents(boolean_fluents)
         
-        for variable in self.new_variables_map.values():
-            for variable_bit in variable:
-                initital_value = new_initial_values[variable_bit]
-                new_problem.set_initial_value(variable_bit, initital_value)
+        for var, initial_val in new_initial_values.items():
+            new_problem.set_initial_value(var, initial_val)
 
         new_problem.add_actions(new_actions)
         new_problem.add_goal(new_goals)
+
+        # Add objects and constants
+        new_problem.add_objects(self.problem.all_objects)
 
         # Manage Overflow fluent
         new_problem.add_fluent(OF_FLUENT)
