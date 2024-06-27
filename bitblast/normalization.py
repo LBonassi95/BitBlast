@@ -5,34 +5,18 @@ from unified_planning.shortcuts import *
 from typing import Tuple
 from unified_planning.model.walkers import Substituter
 # from numeric_tcore.achievers_helper import *
+from bitblast.helpers import *
 from pathlib import Path
 
-SEP = "--"
 
-def args_str(args: Tuple[Object]) -> str:
-    return SEP.join([str(arg) for arg in args])
-
-
-def get_ground_fluent(fluent_exp: FNode) -> Fluent:
-    assert isinstance(fluent_exp, FNode)
-    original_fluent = fluent_exp.fluent()
-    fluent_type = original_fluent.type
-    if len(fluent_exp.args) > 0:
-        return Fluent(f"{original_fluent.name}{SEP}{args_str(args=fluent_exp.args)}", fluent_type)
+def replace_complex_conditions(formula: FNode, conditions_map: Dict[FNode, FNode]) -> Tuple[FNode, Dict[FNode, FNode]]:
+    """
+    Transform complex expressions into conditions of the form x >= 0
+    """
+    if check_ge_zero(formula):
+        return formula, conditions_map
     else:
-        return Fluent(f"{original_fluent.name}", fluent_type)
-    
-
-def get_ground_fluents(problem: Problem) -> List[Fluent]:
-    ground_fluents = []
-    substitution_map = {}
-    
-    # TODO CHECK THIS!!!!!!!!
-    for var in problem.initial_values.keys():
-        ground_fluents.append(get_ground_fluent(var))
-        substitution_map[var] = FluentExp(get_ground_fluent(var))
-    
-    return ground_fluents, substitution_map
+        raise NotImplementedError("The formula is not in the form x >= 0")
 
 def normalize(problem: Problem) -> Problem:
     grounder = Compiler(compilation_kind = CompilationKind.GROUNDING)

@@ -35,8 +35,8 @@ def effects_num(action: InstantaneousAction):
 def effects_prop(action: InstantaneousAction):
     return {eff for eff in effects(action) if is_propositional_effect(eff)}
 
-def get_action_effect_map(problem: Problem) -> Dict[str, set[Effect]]:
-    return {action_name(a): effects(a) for a in problem.actions}
+def get_action_effect_map(actions: List[InstantaneousAction]) -> Dict[str, set[Effect]]:
+    return {action_name(a): effects(a) for a in actions}
 
 def get_numeric_variables(problem: Problem) -> Set[Fluent]:
     ground_fluents = set()
