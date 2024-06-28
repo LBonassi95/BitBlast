@@ -10,24 +10,48 @@ from bitblast.base_compilation import BaseCompiler
 from bitblast.normalization import *
 import pytest
 
-Obj = UserType("object")
+# Obj = UserType("object")
 
-v1 = Object("v1", Obj)
-v2 = Object("v2", Obj)
+# a1 = Object("a1", Obj)
+# a2 = Object("a2", Obj)
 
-x = Fluent("x", RealType(), v = Obj)
-b = Fluent("b", BoolType(), v = Obj)
+# x = Fluent("x", RealType(), v = Obj)
+# b = Fluent("b", BoolType(), v = Obj)
 
-formula_1 = GE(x(v1), 0)
-formula_2 = GE(x(v1), 5)
+# new_var0 = Fluent("v0", RealType())
+# new_var1 = Fluent("v1", RealType())
 
-combinations = [
-    (formula_1, formula_1, {}),
-    #(formula_2, formula_1, {})
-]
+# cond1 = GE(x(a1), 0)
+# cond2 = GE(x(a1), 5)
+# # cond2_alt = GE(Minus(Times(x(a1), 2), Plus(5, x(a1))), 0)
+# new_cond2 = GE(new_var0(), 0)
 
-@pytest.mark.parametrize("formula, expected_formula, expected_variables", combinations)
-def test_formula_normalization(formula, expected_formula, expected_variables):
-    result_formula, result_variables = replace_complex_conditions(formula, {})
-    assert result_formula == expected_formula
-    assert result_variables == expected_variables
+# cond3 = LE(x(a1), 0)
+# cond4 = LT(x(a1), 0)
+
+# combinations = [
+#     (cond1, cond1, {}),
+#     (cond2, new_cond2, {Minus(x(a1), 5): new_var0}),
+#     (And(cond1, cond2), And(cond1, new_cond2), {Minus(x(a1), 5): new_var0}),
+#     (Or(cond1, cond2), Or(cond1, new_cond2), {Minus(x(a1), 5): new_var0}),
+#     (Not(cond2), Not(new_cond2), {Minus(x(a1), 5): new_var0}),
+#     (And(cond2, Or(cond1, cond2)), And(new_cond2, Or(cond1, new_cond2)), {Minus(x(a1), 5): new_var0}),
+#     (cond3, GE(new_var0, 0), {Minus(0, x(a1)): new_var0}),
+#     (cond4, Not(GE(x(a1), 0)), {}),
+# ]
+
+# @pytest.mark.parametrize("formula, expected_formula, expected_map", combinations)
+# def test_formula_normalization(formula, expected_formula, expected_map):
+#     formula_normalizer = FormulaNormalizer()
+#     result_formula = formula_normalizer.normalize(formula)
+#     assert result_formula == expected_formula
+#     assert formula_normalizer.conditions_map == expected_map
+
+
+def test_pre_normalization():
+    domain_path = Path(__file__).parent / "pddl" / "counters" / "domain.pddl"
+    problem_path = Path(__file__).parent / "pddl" / "counters" / "instance_4.pddl"
+    reader = PDDLReader()
+    problem = reader.parse_problem(domain_path, problem_path)
+    problem = normalize(problem)
+    print()

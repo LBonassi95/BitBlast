@@ -1,33 +1,11 @@
 from unified_planning.shortcuts import *
+from bitblast.helpers.shortcuts import *
 from typing import List, Tuple, Set, Dict
 import numpy as np
+from sympy.parsing.sympy_parser import parse_expr, standard_transformations
+from sympy.core import Expr
 
 OVERFLOW_MSG = "Overflow Detected: the value {value} cannot be represented with {nbits} bits"
-
-def is_numeric_effect(eff: Effect) -> bool:
-    return eff.is_increase()
-
-def is_propositional_effect(eff: Effect) -> bool:
-    assert isinstance(eff.value, FNode)
-    return eff.value.is_bool_constant()
-
-def is_int_constant(v: FNode) -> bool:
-    return v.is_int_constant()
-
-def is_bool_constant(v: FNode) -> bool:
-    return v.is_bool_constant()
-
-def constant_value(v: FNode) -> int:
-    return v.constant_value()
-
-def is_numeric_fluent(fl: Fluent) -> bool:
-    return fl.type == RealType() or fl.type == IntType()
-
-def action_name(action: InstantaneousAction) -> str:
-    return action.name
-
-def effects(action: InstantaneousAction):
-    return set(action.effects)
 
 def effects_num(action: InstantaneousAction):
     return {eff for eff in effects(action) if is_numeric_effect(eff)}
@@ -123,3 +101,16 @@ def get_bin_initial_state(new_variables_map: Dict[FNode, List[FNode]],
 
 def sign_bit(bits: List[FNode]) -> FNode:
     return bits[-1]
+
+
+def subtract(lhs: FNode, rhs: FNode) -> FNode:
+    """
+    Perfom subtraction by ignoring zeros.
+    For example, Minus(x - 5, 0) -> x - 5
+    """
+    # TODO: it would be better to use sympy
+    if is_zero(rhs):
+        return lhs
+    if is_zero(lhs):
+        return -rhs
+    return Minus(lhs, rhs)
