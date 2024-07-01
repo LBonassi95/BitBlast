@@ -9,7 +9,7 @@ import click
 @click.argument('domain')
 @click.argument('problem')
 @click.argument('output')
-@click.option('--bits', type=int)
+@click.option('--bits', type=int, required=True)
 @click.option('--optimized', is_flag=True, default=False)
 def main(domain, problem, output, bits, optimized):
     reader = PDDLReader()
