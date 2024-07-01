@@ -10,45 +10,64 @@ from bitblast.base_compilation import BaseCompiler
 from bitblast.normalization import *
 import pytest
 
-# Obj = UserType("object")
+Obj = UserType("object")
 
-# a1 = Object("a1", Obj)
-# a2 = Object("a2", Obj)
+a1 = Object("a1", Obj)
+a2 = Object("a2", Obj)
 
-# x = Fluent("x", RealType(), v = Obj)
-# b = Fluent("b", BoolType(), v = Obj)
+x = Fluent("x", RealType(), v = Obj)
+b = Fluent("b", BoolType(), v = Obj)
 
-# new_var0 = Fluent("v0", RealType())
-# new_var1 = Fluent("v1", RealType())
+new_var0 = Fluent("v0", RealType())
+new_var1 = Fluent("v1", RealType())
 
-# cond1 = GE(x(a1), 0)
-# cond2 = GE(x(a1), 5)
-# # cond2_alt = GE(Minus(Times(x(a1), 2), Plus(5, x(a1))), 0)
-# new_cond2 = GE(new_var0(), 0)
+cond1 = GE(x(a1), 0)
+cond1_expected = GE(x(a1), 0)
 
-# cond3 = LE(x(a1), 0)
-# cond4 = LT(x(a1), 0)
+cond2 = GE(x(a1), 5)
+cond2_expected = GE(new_var0(), 0)
+canonical_expression_test_2 = CanonicalExpression({x(a1): 1}, -5) # x(a1) - 5
 
-# combinations = [
-#     (cond1, cond1, {}),
-#     (cond2, new_cond2, {Minus(x(a1), 5): new_var0}),
-#     (And(cond1, cond2), And(cond1, new_cond2), {Minus(x(a1), 5): new_var0}),
-#     (Or(cond1, cond2), Or(cond1, new_cond2), {Minus(x(a1), 5): new_var0}),
-#     (Not(cond2), Not(new_cond2), {Minus(x(a1), 5): new_var0}),
-#     (And(cond2, Or(cond1, cond2)), And(new_cond2, Or(cond1, new_cond2)), {Minus(x(a1), 5): new_var0}),
-#     (cond3, GE(new_var0, 0), {Minus(0, x(a1)): new_var0}),
-#     (cond4, Not(GE(x(a1), 0)), {}),
-# ]
+cond3 = GE(Times(4, Plus(x(a1), x(a2))), 5)
+cond3_expected = GE(new_var0(), 0)
+canonical_expression_test_3 = CanonicalExpression({x(a1): 4, x(a2): 4}, -5) # 4*x(a1) + 4*x(a2) - 5
 
-# @pytest.mark.parametrize("formula, expected_formula, expected_map", combinations)
-# def test_formula_normalization(formula, expected_formula, expected_map):
-#     formula_normalizer = FormulaNormalizer()
-#     result_formula = formula_normalizer.normalize(formula)
-#     assert result_formula == expected_formula
-#     assert formula_normalizer.conditions_map == expected_map
+cond4 = LE(x(a1), 0)
+cond4_expected = GE(new_var0(), 0)
+canonical_expression_test_4 = CanonicalExpression({x(a1): -1}, 0) # -x(a1)
+
+cond5 = GT(x(a1), 0)
+cond5_expected = Not(GE(new_var0(), 0))
+canonical_expression_test_5 = CanonicalExpression({x(a1): -1}, 0) # -x(a1)
+
+cond6 = Equals(x(a1), 0)
+cond6_expected = And(GE(x(a1), 0), GE(new_var0, 0))
+canonical_expression_test_6 = CanonicalExpression({x(a1): -1}, 0) # -x(a1)
+
+combinations = [
+    (cond1, cond1_expected, {}),
+    (cond2, cond2_expected, {canonical_expression_test_2: new_var0}),
+    (cond3, GE(new_var0, 0), {canonical_expression_test_3: new_var0}),
+    (cond4, cond4_expected, {canonical_expression_test_4: new_var0}),
+    (cond5, cond5_expected, {canonical_expression_test_5: new_var0}),
+    (cond6, cond6_expected, {canonical_expression_test_6: new_var0}),
+    # Test generic formulas
+    (And(cond1, cond2), And(cond1, cond2_expected), {canonical_expression_test_2: new_var0}),
+    (Or(cond1, cond2), Or(cond1, cond2_expected), {canonical_expression_test_2: new_var0}),
+    (Not(cond2), Not(cond2_expected), {canonical_expression_test_2: new_var0}),
+    (And(cond2, Or(cond1, cond2)), And(cond2_expected, Or(cond1, cond2_expected)), {canonical_expression_test_2: new_var0}),
+    (And(cond2, Or(cond1, cond2)), And(cond2_expected, Or(cond1, cond2_expected)), {canonical_expression_test_2: new_var0}),
+]
+
+@pytest.mark.parametrize("formula, expected_formula, expected_map", combinations)
+def test_formula_normalization(formula, expected_formula, expected_map):
+    formula_normalizer = FormulaNormalizer()
+    result_formula = formula_normalizer.normalize(formula)
+    assert result_formula == expected_formula
+    assert formula_normalizer.conditions_map == expected_map
 
 
-def test_pre_normalization():
+def test_normalization():
     domain_path = Path(__file__).parent / "pddl" / "counters" / "domain.pddl"
     problem_path = Path(__file__).parent / "pddl" / "counters" / "instance_4.pddl"
     reader = PDDLReader()

@@ -1,7 +1,7 @@
 from unified_planning.io.pddl_reader import PDDLReader
 from unified_planning.model import Problem
 from unified_planning.shortcuts import *
-from bitblast.helpers import *
+from bitblast.canonical_linear_expression import *
 from pathlib import Path
 import os
 import numpy as np
@@ -36,4 +36,4 @@ combinations = [
 ]
 @pytest.mark.parametrize("expression, expected_expression", combinations)
 def test_sympy_simplify(expression, expected_expression):
-    assert expected_expression.simplify() == deep_simplify(expression).simplify()
+    assert expected_expression.simplify() == get_canonical_expression(expression).get_formula()

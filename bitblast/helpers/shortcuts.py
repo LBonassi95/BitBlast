@@ -27,6 +27,9 @@ def is_or(f: FNode) -> bool:
 def is_not(f: FNode) -> bool:
     return f.is_not()
 
+def is_fluent_exp(f: FNode) -> bool:
+    return f.is_fluent_exp()
+
 def is_minus(f: FNode) -> bool:
     return f.is_minus()
 

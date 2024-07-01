@@ -5,65 +5,101 @@ from unified_planning.shortcuts import *
 from typing import Tuple
 # from numeric_tcore.achievers_helper import *
 from bitblast.helpers import *
+from bitblast.canonical_linear_expression import *
 from pathlib import Path
-
-# class VariableFactory:
-#     def __init__(self) -> None:
-#         self.index = -1
-
-#     def get_new_var(self) -> Fluent:
-#         self.index += 1
-#         return Fluent(f"v{self.index}", RealType())
+from unified_planning.model.walkers import Simplifier
+from unified_planning.model.walkers.state_evaluator import StateEvaluator
+from unified_planning.model.state import UPState
+from unified_planning.model.walkers import FreeVarsExtractor
 
 
-# class FormulaNormalizer:
+class VariableFactory:
+    '''
+    A factory class to create new variables
+    '''
+    def __init__(self) -> None:
+        self.index = -1
+
+    def get_new_var(self) -> Fluent:
+        self.index += 1
+        return Fluent(f"v{self.index}", RealType())
+
+
+class FormulaNormalizer:
      
-#     def __init__(self) -> None:
-#         # self.conditions_map: Dict[FNode, Fluent] = {}
-#         self.conditions_map: Dict[Expr, Fluent] = {}
-#         self.factory = VariableFactory()
+    def __init__(self) -> None:
+        self.conditions_map: Dict[CanonicalExpression, Fluent] = {}
+        self.factory = VariableFactory()
+        self.simplifier = Simplifier(environment=get_environment())
 
-#     def get_variable(self, condition: Expr) -> FNode:
-#         """
-#         Get the variable associated with the condition and save it in the conditions_map
-#         Example: 4x + 5y - 3 -> v1
-#         """
-#         if self.conditions_map.get(condition, None) is not None:
-#             return FluentExp(self.conditions_map[condition])
-#         else:
-#             new_var = self.factory.get_new_var()
-#             self.conditions_map[condition] = new_var
-#         return FluentExp(new_var)
-
-#     def normalize(self, formula: FNode) -> FNode:
-#         """
-#         Transform complex expressions into conditions of the form x >= 0
-#         """
-#         if is_and(formula):
-#             return And(*[self.normalize(f) for f in formula.args])
-#         elif is_or(formula):
-#             return Or(*[self.normalize(f) for f in formula.args])
-#         elif is_not(formula):
-#             return Not(self.normalize(formula.args[0]))
-#         else:
-#             return self.normalize_condition(formula)
+    def get_variable(self, canonical_expression: CanonicalExpression) -> Fluent:
+        """
+        Get the variable associated with the condition and save it in the conditions_map
+        Example: 4x + 5y - 3 -> v0
+        """
+        if self.conditions_map.get(canonical_expression, None) is not None:
+            return self.conditions_map[canonical_expression]
+        else:
+            new_var = self.factory.get_new_var()
+            self.conditions_map[canonical_expression] = new_var
+        return new_var
     
-#     def normalize_condition(self, formula: FNode) -> FNode:
-#         if check_ge_zero(formula):
-#             return formula
-#         elif is_le(formula):
-#             new_var = self.get_variable(subtract(rhs(formula), lhs(formula)))
-#             return GE(new_var, 0)
-#         elif is_lt(formula):
-#             # If we have x < 0, we can transform it into Not(x >= 0) without adding a new variable.
-#             if check_ge_zero(GE(lhs(formula), rhs(formula))):
-#                 return Not(GE(lhs(formula), rhs(formula)))
-#             return Not(self.normalize(GE(0, Minus(rhs(formula), lhs(formula)))))
-#         else:
-#             raise ValueError(f"Formula {formula} is not supported")
+    def normalize(self, condition: FNode) -> FNode:
+        '''
+        Normalize a generic condition
+        '''
+        if is_and(condition):
+            return And(*[self.normalize(c) for c in condition.args])
+        elif is_or(condition):
+            return Or(*[self.normalize(c) for c in condition.args])
+        elif is_not(condition):
+            return Not(self.normalize(condition.args[0]))
+        elif is_fluent_exp(condition):
+            return condition
+        elif is_numeric_condition(condition): # Nuemric condition
+            return self.normalize_condition(condition)
+        else:
+            raise ValueError(f"Formula {condition} is not supported")
+        
+    def normalize_condition(self, condition: FNode):
+        '''
+        Normalize a numeric condition, creating a new variable if needed
+        '''
+        if is_le(condition):
+            preprocessed_formula = self.simplifier.simplify(Minus(rhs(condition), lhs(condition)))
+            expression = get_canonical_expression(preprocessed_formula)
+            if self.is_simple_condition(expression): 
+                # Condition is of the form x.
+                # Hence we have 0 <= x, which is equivalent to x >= 0 
+                return condition
+            new_var = self.get_variable(expression)
+            return GE(new_var, 0)
+        elif is_lt(condition):
+            preprocessed_formula = self.simplifier.simplify(Minus(rhs(condition), lhs(condition)))
+            res = Not(GE(-preprocessed_formula, 0))
+            return self.normalize(res)
+        elif is_equals(condition):
+            res = And(GE(lhs(condition), rhs(condition)), LE(lhs(condition), rhs(condition)))
+            return self.normalize(res)
+        else:
+            raise ValueError(f"Formula {condition} is not supported")
+    
+    def is_simple_condition(self, expr: CanonicalExpression) -> bool:
+        '''
+        Check if the expression is a condition of the form x >= 0
+        '''
+        if len(expr.coefficients.keys()) == 1: # Exacly one variable
+            var = list(expr.coefficients.keys())[0]
+            coefficient = expr.coefficients[var]
+            return coefficient == 1 and expr.constant == 0
+        else:
+            return False
 
-# Transform all effects into INCREASE
+
 def set_normalized_effect(act: InstantaneousAction, eff: Effect, simplifier: Simplifier):
+    '''
+    Set the effect in the action as an INCREASE effect
+    '''
     if is_propositional_effect(eff):
         act.add_effect(condition=eff.condition, value=eff.value, fluent=eff.fluent)
     elif eff.is_increase():
@@ -75,32 +111,123 @@ def set_normalized_effect(act: InstantaneousAction, eff: Effect, simplifier: Sim
         raise NotImplementedError("Effect type not supported")
     
 
-def normalize_action(act: InstantaneousAction, simplifier: Simplifier) -> InstantaneousAction:
+def normalize_action(act: InstantaneousAction, formula_normalizer: FormulaNormalizer) -> InstantaneousAction:
+    '''
+    Normalize an action:
+        - transform all the preconditions into conditions of the form x >= 0
+        - transform all the effects into INCREASE effects
+    '''
     normalized_action = InstantaneousAction(act.name)
     
     for pre in act.preconditions:
-        if is_numeric_condition(pre):
-            expression = deep_simplify(simplifier.simplify(Minus(lhs(pre), rhs(pre))))
-            if is_le(pre):
-                normalized_action.add_precondition(LE(expression, 0))
-            elif is_lt(pre):
-                normalized_action.add_precondition(LT(expression, 0))
-            elif is_equals(pre):
-                normalized_action.add_precondition(Equals(expression, 0))
-        else:
-            normalized_action.add_precondition(pre)
+        normalized_action.add_precondition(formula_normalizer.normalize(pre))
 
-    
     for eff in act.effects:
-        set_normalized_effect(normalized_action, eff, simplifier)
+        set_normalized_effect(normalized_action, eff, formula_normalizer.simplifier)
     return normalized_action
+
+
+def get_delta(act: InstantaneousAction, expression: CanonicalExpression) -> int:
+    '''
+    Get how much the expression is increased or decreased by the action
+    '''
+    expression_variables = set(expression.coefficients.keys())
+    relevant_effects = [eff for eff in act.effects if eff.fluent in expression_variables]
+    delta = 0
+    for eff in relevant_effects:
+        delta += int(constant_value(eff.value)) * expression.coefficients[eff.fluent]
+    return delta
+
+
+
+def add_new_effects(act: InstantaneousAction, formula_normalizer: FormulaNormalizer) -> InstantaneousAction:
+    '''
+    Add new effects for the new variables created during the normalization
+    '''
+    for expression, variable in formula_normalizer.conditions_map.items():
+        delta = get_delta(act, expression)
+        if delta != 0:
+            act.add_increase_effect(condition=TRUE(), value=Int(delta), fluent=variable)
+
+
+def get_initial_value(expression: FNode, initial_state: UPState, state_evaluator: StateEvaluator) -> int:
+    return state_evaluator.evaluate(expression, initial_state)
+
+def remove_unnecessary_effects(normalized_problem: Problem):
+    '''
+    Remove unnacessary effects from the actions.
+    An effect is unnecessary if it changes a fluent that is not used in any precondition or goal
+    '''
+    extractor = get_environment().free_vars_extractor
+    assert isinstance(extractor, FreeVarsExtractor)
+
+    all_var = []
+    
+    for a in normalized_problem.actions:
+        assert isinstance(a, InstantaneousAction)
+        for pre in a.preconditions:
+            all_var.extend(extractor.get(pre))
+
+    for g in normalized_problem.goals:
+        all_var.extend(extractor.get(g))
+
+    unnecessary_vars = set(normalized_problem.initial_values.keys()) - set(all_var)
+
+    for a in normalized_problem.actions:
+        assert isinstance(a, InstantaneousAction)
+        for eff in a.effects:
+            assert isinstance(eff, Effect)
+            if eff.fluent in unnecessary_vars:
+                a.effects.remove(eff)
+
+def snp_to_rnp(problem: Problem) -> Problem:
+
+    formula_normalizer = FormulaNormalizer()
+    state_evaluator = StateEvaluator(problem)
+    normalized_problem = Problem(name="normalized")
+
+    # Normalize the actions
+    normalized_actions = []
+    for act in problem.actions:
+        normalized_actions.append(normalize_action(act, formula_normalizer))
+
+    # Normalize the goals
+    for g in problem.goals:
+        normalized_problem.add_goal(formula_normalizer.normalize(g))
+
+    # Add new effects for the new variables created during the normalization
+    for act in normalized_actions:
+        add_new_effects(act, formula_normalizer)
+
+    # Get the new initial values for the new variables
+    new_initial_values = {}
+    for expression, new_var in formula_normalizer.conditions_map.items():
+        initial_value = get_initial_value(expression.get_formula(), UPState(problem.initial_values), state_evaluator)
+        new_initial_values[FluentExp(new_var)] = initial_value
+
+    # Add actions, fluents and objects to the new problem
+    normalized_problem.add_fluents(problem.fluents)
+    normalized_problem.add_actions(normalized_actions)
+    normalized_problem.add_objects(problem.all_objects)
+    normalized_problem.add_fluents(formula_normalizer.conditions_map.values())
+
+    # Copy the initial values from the original problem
+    for var, value in problem.initial_values.items():
+        normalized_problem.set_initial_value(var, value)
+
+    # Set the new initial values for the new variables
+    for var, value in new_initial_values.items():
+        normalized_problem.set_initial_value(var, value)
+
+    # Remove unnecessary effects
+    remove_unnecessary_effects(normalized_problem)
+
+    return normalized_problem
 
 
 def normalize(problem: Problem) -> Problem:
     grounder = Compiler(compilation_kind = CompilationKind.GROUNDING)
     quantifier_remover = Compiler(compilation_kind = CompilationKind.QUANTIFIERS_REMOVING)
-
-    # semplificare gli implies
 
     # Ground the problem
     ground_problem = grounder.compile(problem).problem
@@ -108,51 +235,6 @@ def normalize(problem: Problem) -> Problem:
     # Remove Forall and Exists quantifiers
     ground_problem = quantifier_remover.compile(ground_problem).problem
     assert isinstance(ground_problem, Problem)
-
-    # CAREFUL! THIS SUBSTITUE THE STATIC VARIABLES
-    simplifier = Simplifier(environment=get_environment(), problem=problem)
-
-    # Normalize the actions
-    normalized_actions = []
-    for act in ground_problem.actions:
-        normalized_actions.append(normalize_action(act, simplifier))
-
-    normalized_problem = Problem(name="normalized")
-    normalized_problem.add_fluents(ground_problem.fluents)
-    normalized_problem.add_actions(normalized_actions)
-
-    # TODO SIMPLIFY A GENERIC FORMULA
-
-    for g in ground_problem.goals:
-        normalized_problem.add_goal(g)
-    normalized_problem.add_objects(ground_problem.all_objects)
-    for var, value in ground_problem.initial_values.items():
-        normalized_problem.set_initial_value(var, value)
-
-    # TODO: transform the problem to a RT taks
-
-    # ground_fluents, ground_fluents_map = get_ground_fluents(ground_problem)
-    # subsistuter = Substituter(get_environment())
-    # normalized_problem = Problem(name="normalized")
-    # normalized_problem.add_fluents(ground_fluents)
-
-    # normalized_actions = []
-    # for act in ground_problem.actions:
-    #     assert isinstance(act, InstantaneousAction)
-    #     new_act = InstantaneousAction(act.name)
-    #     new_preconditions = [subsistuter.substitute(pre, ground_fluents_map) for pre in act.preconditions]
-    #     for pre in new_preconditions:
-    #         new_act.add_precondition(pre)
-    #     print()
-        
-        
-    # normalized_problem.add_actions(ground_problem.actions)
-    # for g in ground_problem.goals:
-    #     normalized_problem.add_goal(g)
-
-    # for var, value in ground_problem.initial_values.items():
-    #     normalized_problem.set_initial_value(var, value)
-
     ##########################################
 
-    return normalized_problem
+    return snp_to_rnp(ground_problem)
