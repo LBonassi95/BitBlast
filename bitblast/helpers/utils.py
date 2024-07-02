@@ -7,16 +7,16 @@ from sympy.core import Expr
 
 OVERFLOW_MSG = "Overflow Detected: the value {value} cannot be represented with {nbits} bits"
 
-def effects_num(action: InstantaneousAction):
+def effects_num(action: InstantaneousAction) -> Set[Effect]:
     return {eff for eff in effects(action) if is_numeric_effect(eff)}
 
-def effects_prop(action: InstantaneousAction):
+def effects_prop(action: InstantaneousAction) -> Set[Effect]:
     return {eff for eff in effects(action) if is_propositional_effect(eff)}
 
 def get_action_effect_map(actions: List[InstantaneousAction]) -> Dict[str, set[Effect]]:
     return {action_name(a): effects(a) for a in actions}
 
-def get_numeric_variables(problem: Problem) -> Set[Fluent]:
+def get_numeric_variables(problem: Problem) -> Set[FNode]:
     ground_fluents = set()
     
     # TODO CHECK THIS!!!!!!!!
@@ -58,7 +58,7 @@ def args_str(args: Tuple[Object]) -> str:
     return SEP.join([str(arg) for arg in args])
 
 
-def get_ground_fluent_name(fluent_exp: FNode) -> Fluent:
+def get_ground_fluent_name(fluent_exp: FNode) -> str:
     original_fluent = fluent_exp.fluent()
     if len(fluent_exp.args) > 0:
         return f"{original_fluent.name}{SEP}{args_str(args=fluent_exp.args)}"
