@@ -5,12 +5,11 @@ from bitblast.helpers import *
 from pathlib import Path
 import os
 import numpy as np
-from unified_planning.io.pddl_writer import PDDLWriter
-from bitblast.axioms_compilation import AxiomsCompiler
+from unified_planning.io.pddl_writer import PDDLWriter, ConverterToPDDLString
+from bitblast.axioms_compilation import AxiomsCompiler, Axiom, ProblemAxiomWriter
 from bitblast.normalization import normalize
 
-
-out_path = Path(__file__).parent / "pddl" / "simple" 
+out_path = Path(__file__).parent.parent
 def test_compilation():
     domain_path = Path(__file__).parent / "pddl" / "simple" / "domain.pddl"
     problem_path = Path(__file__).parent / "pddl" / "simple" / "problem.pddl"
@@ -19,11 +18,12 @@ def test_compilation():
 
     nbits = 4
     compilation = AxiomsCompiler(problem, nbits, optimized=True)
-    new_problem = compilation.get_compiled_problem()
+    new_problem, axioms = compilation.get_compiled_problem()
 
-    writer = PDDLWriter(new_problem)
-    writer.write_problem(out_path / "compiled_problem.pddl")
-    writer.write_domain(out_path / "compiled_domain.pddl")
+    ax_writer = ProblemAxiomWriter(new_problem, axioms)
+
+    open(out_path / "compiled_domain.pddl", 'w').write(ax_writer.get_domain())
+    open(out_path / "compiled_problem.pddl", 'w').write(ax_writer.get_problem())
 
 def test_compilation_fo():
     domain_path = Path(__file__).parent / "pddl" / "simple_fo" / "domain.pddl"
@@ -34,10 +34,11 @@ def test_compilation_fo():
 
     nbits = 4
     compilation = AxiomsCompiler(problem, nbits, optimized=True)
-    new_problem = compilation.get_compiled_problem()
+    new_problem, axioms = compilation.get_compiled_problem()
 
-    writer = PDDLWriter(new_problem)
-    writer.write_problem(out_path / "compiled_problem.pddl")
-    writer.write_domain(out_path / "compiled_domain.pddl")
+    ax_writer = ProblemAxiomWriter(new_problem, axioms)
+
+    open(out_path / "compiled_domain.pddl", 'w').write(ax_writer.get_domain())
+    open(out_path / "compiled_problem.pddl", 'w').write(ax_writer.get_problem())
 
 

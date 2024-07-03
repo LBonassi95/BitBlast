@@ -1,4 +1,5 @@
 from bitblast.helpers import *
+from unified_planning.io.pddl_writer import ConverterToPDDLString, PDDLWriter
 
 
 class Axiom:
@@ -12,6 +13,34 @@ class Axiom:
     
     def get_derived_fluent(self):
         return self.head
+    
+    def to_pddl(self, converter: ConverterToPDDLString) -> str:
+        head = converter.convert(FluentExp(self.head))
+        body = converter.convert(self.body)
+        return f'(:derived {head} {body})'
+
+class ProblemAxiomWriter:
+
+    def __init__(self, problem: Problem, axioms: List[Axiom]) -> None:
+        self.writer = PDDLWriter(problem)
+        self.converter = ConverterToPDDLString(
+            get_environment(), self.writer._get_mangled_name
+        )
+        self.axioms = axioms
+
+    def get_problem(self) -> str:
+        return self.writer.get_problem()
+    
+    def get_domain(self) -> str:
+        pddl_axioms = []
+        for ax in self.axioms:
+            pddl_axioms.append(ax.to_pddl(self.converter))
+
+        domain_string = self.writer.get_domain()
+
+        # inject axioms before the first action
+        domain_string = domain_string.replace('(:action', '\n'.join(pddl_axioms) + '\n(:action', 1)
+        return domain_string
 
 class AxiomsCompiler:
 
@@ -27,10 +56,11 @@ class AxiomsCompiler:
         constants_abs = {np.abs(constant_value(q)) for q in self.constants.union(self.init_constants)}
         min_bits = int(np.ceil(np.log2(max(constants_abs) + 1)))
         assert nbits >= min_bits
-        if optimized:
-            self.constants = {}
+        self.constants = {}
         
     def get_compiled_problem(self) -> Problem:
+
+        self.false = Fluent("FALSE", BoolType())
 
         # Binary fluents, variables, and constants
         self.new_fluents, self.new_variables_map = get_bit_variables(self.numeric_variables, self.constants, self.nbits)
@@ -39,28 +69,10 @@ class AxiomsCompiler:
         new_initial_values = get_bin_initial_state(self.new_variables_map, self.problem.initial_values, self.nbits)
 
         # New axioms
-        effects_axioms_map = {}
-        numeric_effects = get_all_eff_num(self.problem)
-
-        # IMPROVE: Find a better way to label the effects
-        # ideally, we would like to use the name of the variable and the value
-        for eff_label, eff in enumerate(numeric_effects):
-            x_bits = self.new_variables_map[eff.fluent]
-            nbits = len(x_bits)
-            q_bits = bitblast_int(constant_value(eff.value), nbits)
-            q_bits = [TRUE() if q_bits[i] else FALSE() for i in range(nbits)]
-            circuit = compact_full_adder_circuit(x_bits, q_bits, eff_label)
-            carry_axioms = []
-            sum_axioms = []
-            for i in range(-1, nbits):
-                carry_axioms += [Axiom(carry_fl(i, eff_label), circuit["c"][carry_fl(i, eff_label)])]
-                if i >= 0:
-                    sum_axioms += [Axiom(sum_fl(i, eff_label), circuit["z"][sum_fl(i, eff_label)])]
-            effects_axioms_map[eff] = carry_axioms + sum_axioms
-        print("Compiling axioms...")
+        self.all_axioms, self.effects_axioms_map = self.compute_axioms()
 
         # New actions
-        new_actions = [convert_action(action, self.new_variables_map, self.optimized) for action in self.problem.actions]
+        new_actions = [self.convert_action(action) for action in self.problem.actions]
 
         # New goal
         new_goals = And(*[convert_condition(g, self.new_variables_map) for g in self.problem.goals])
@@ -77,6 +89,10 @@ class AxiomsCompiler:
         for var, initial_val in new_initial_values.items():
             new_problem.set_initial_value(var, initial_val)
 
+        # Add new derived predicates
+        for dp in [ax.head for ax in self.all_axioms] + [self.false]:
+            new_problem.add_fluent(dp, default_initial_value=FALSE())
+
         new_problem.add_actions(new_actions)
         new_problem.add_goal(new_goals)
 
@@ -88,4 +104,67 @@ class AxiomsCompiler:
         new_problem.set_initial_value(OF_FLUENT, FALSE())
         new_problem.add_goal(Not(OF_FLUENT))
 
-        return new_problem
+        return new_problem, self.all_axioms
+    
+
+    def compute_axioms(self):
+        effects_axioms_map = {}
+        all_axioms = []
+        numeric_effects = get_all_eff_num(self.problem)
+
+        # IMPROVE: Find a better way to label the effects
+        # ideally, we would like to use the name of the variable and the value
+        for eff_label, eff in enumerate(numeric_effects):
+            
+            carry_axioms, sum_axioms, overflow_axiom, var_to_dp_map = self.compute_effect_axioms(eff, eff_label)
+            all_axioms += carry_axioms + sum_axioms + [overflow_axiom]
+
+            effects_axioms_map[eff] = var_to_dp_map
+
+        return all_axioms, effects_axioms_map
+
+    def compute_effect_axioms(self, eff: Effect, eff_label: int) -> List[Axiom]:
+
+        x_bits = self.new_variables_map[eff.fluent]
+        q_bits = bitblast_int(constant_value(eff.value), len(x_bits))
+        q_bits = [TRUE() if q_bits[i] else FALSE() for i in range(len(x_bits))]
+
+        circuit = compact_full_adder_circuit(x_bits, q_bits, eff_label)
+
+        carry_axioms = [Axiom(carry_fl(-1, eff_label), FluentExp(self.false))] + \
+                       [Axiom(carry_fl(i, eff_label), circuit["c"][carry_fl(i, eff_label)]) for i in range(len(x_bits))]
+        sum_axioms = [Axiom(sum_fl(i, eff_label), circuit["z"][sum_fl(i, eff_label)]) for i in range(len(x_bits))]
+
+        var_to_dp_map = {x_bits[i]: sum_fl(i, eff_label) for i in range(len(x_bits))}
+
+        sign_x = sign_bit(x_bits)
+        sign_q = sign_bit(q_bits)
+        sign_sum = sum_fl(len(x_bits)-1, eff_label)
+
+        of_head = Fluent(f'of_{eff_label}', BoolType())
+        of_body = Or(And(sign_x, sign_q, Not(sign_sum)), And(Not(sign_x), Not(sign_q), sign_sum))
+        overflow_axiom = Axiom(of_head, of_body)
+
+        var_to_dp_map[FluentExp(OF_FLUENT)] = of_head
+
+        return carry_axioms, sum_axioms, overflow_axiom, var_to_dp_map
+    
+
+    def convert_action(self, act: InstantaneousAction) -> InstantaneousAction:
+    
+        new_action = InstantaneousAction(act.name)
+        numeric_effects = effects_num(action=act)
+
+        for precondition in act.preconditions:
+            assert check_condition(precondition)
+            new_action.add_precondition(convert_condition(precondition, self.new_variables_map))
+
+        for eff in numeric_effects:
+            for var, dp in self.effects_axioms_map[eff].items():
+                new_action.add_effect(condition=dp, fluent=var, value=TRUE())
+                new_action.add_effect(condition=Not(dp), fluent=var, value=FALSE())
+        
+        for eff in effects_prop(action=act):
+            new_action.add_effect(condition=eff.condition, fluent=eff.fluent, value=eff.value)
+
+        return new_action
