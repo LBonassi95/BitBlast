@@ -16,7 +16,7 @@ def test_compilation():
     reader = PDDLReader()
     problem = reader.parse_problem(domain_path, problem_path)
 
-    nbits = 4
+    nbits = 5
     compilation = AxiomsCompiler(problem, nbits, optimized=True)
     new_problem, axioms = compilation.get_compiled_problem()
 
@@ -30,7 +30,7 @@ def test_compilation_fo():
     problem_path = Path(__file__).parent / "pddl" / "simple_fo" / "problem.pddl"
     reader = PDDLReader()
     problem = reader.parse_problem(domain_path, problem_path)
-    problem = normalize(problem)
+    problem, _, _ = normalize(problem)
 
     nbits = 4
     compilation = AxiomsCompiler(problem, nbits, optimized=True)

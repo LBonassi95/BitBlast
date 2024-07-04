@@ -11,6 +11,7 @@ from unified_planning.model.walkers import Simplifier
 from unified_planning.model.walkers.state_evaluator import StateEvaluator
 from unified_planning.model.state import UPState
 from unified_planning.model.walkers import FreeVarsExtractor
+from unified_planning.model.metrics import PlanQualityMetric
 
 
 class VariableFactory:
@@ -225,7 +226,58 @@ def snp_to_rnp(problem: Problem) -> Problem:
     return normalized_problem
 
 
-def normalize(problem: Problem) -> Problem:
+def pop_metric_effects(act: InstantaneousAction, metric_vars: Set[Fluent]) -> List[Effect]:
+    '''
+    Extract the effects that are related to the metric variables
+    '''
+    for pre in act.preconditions:
+        assert len(get_environment().free_vars_extractor.get(pre) & metric_vars) == 0, "Metric variables appearing in the preconditions are not supported"
+    metric_effects = []
+    for eff in act.effects:
+        assert isinstance(eff, Effect)
+        if eff.fluent in metric_vars:
+            metric_effects.append(eff)
+            act.effects.remove(eff)
+    return metric_effects
+
+
+def extract_metric(problem: Problem) -> Tuple[PlanQualityMetric, Dict[str, List[Effect]]]:
+    '''
+    Extract the metric from the problem and the effects related to the metric variables
+    '''
+    assert len(problem.quality_metrics) <= 1, "Only one metric is supported"
+    if len(problem.quality_metrics) == 1:
+        metric = problem.quality_metrics[0]
+        assert isinstance(metric, PlanQualityMetric)
+        metric_vars = get_environment().free_vars_extractor.get(metric.expression)
+    
+        metric_map = {a.name: pop_metric_effects(a, metric_vars) for a in problem.actions}
+        
+        return metric, metric_map
+
+    else:
+        return None, {}
+    
+
+def add_metric(problem: Problem, metric: PlanQualityMetric, metric_map: Dict[str, List[Effect]]) -> None:
+    '''
+    Add the metric to the problem
+    '''
+    problem.add_quality_metric(metric)
+    for a in problem.actions:
+        assert isinstance(a, InstantaneousAction)
+        metric_effects = metric_map.get(a.name, [])
+        for eff in metric_effects:
+            if eff.is_increase():
+                a.add_increase_effect(condition=eff.condition, fluent=eff.fluent, value=eff.value)
+            elif eff.is_decrease():
+                a.add_decrease_effect(condition=eff.condition, fluent=eff.fluent, value=eff.value)
+            else:
+                assert eff.is_assignment()
+                a.add_effect(condition=eff.condition, fluent=eff.fluent, value=eff.value)
+
+
+def normalize(problem: Problem) -> Tuple[Problem, PlanQualityMetric, Dict[str, List[Effect]]]:
     grounder = Compiler(compilation_kind = CompilationKind.GROUNDING)
     quantifier_remover = Compiler(compilation_kind = CompilationKind.QUANTIFIERS_REMOVING)
 
@@ -237,4 +289,8 @@ def normalize(problem: Problem) -> Problem:
     assert isinstance(ground_problem, Problem)
     ##########################################
 
-    return snp_to_rnp(ground_problem)
+    # Extract the metric from the problem
+    metric, metric_map = extract_metric(ground_problem)
+    #####################################
+
+    return snp_to_rnp(ground_problem), metric, metric_map

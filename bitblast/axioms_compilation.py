@@ -58,7 +58,7 @@ class AxiomsCompiler:
         assert nbits >= min_bits
         self.constants = {}
         
-    def get_compiled_problem(self) -> Problem:
+    def get_compiled_problem(self) -> Tuple[Problem, List[Axiom]]:
 
         self.false = Fluent("FALSE", BoolType())
 
