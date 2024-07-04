@@ -21,7 +21,7 @@
 	(visible waypoint3 waypoint2)
 	(visible waypoint3 waypoint0)
 	(visible waypoint0 waypoint3)
-	(= (recharges) 0)
+	(= (total-cost) 0)
 	(at_soil_sample waypoint0)
 	(at_rock_sample waypoint0)
 	(in_sun waypoint1)
@@ -63,5 +63,5 @@
 	)
 )
 
-(:metric minimize (recharges))
+(:metric minimize (total-cost))
 )

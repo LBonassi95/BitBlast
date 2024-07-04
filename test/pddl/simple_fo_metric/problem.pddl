@@ -8,7 +8,7 @@
 (:init
     (= (x k1) -5)
     (= (x k2) -5)
-    (= (cost) 0)
+    (= (total-cost) 0)
 )
 
 (:goal (and
@@ -16,6 +16,6 @@
     (>= (x k2) 0)
 ))
 
-(:metric minimize (cost))
+(:metric minimize (total-cost))
 
 )

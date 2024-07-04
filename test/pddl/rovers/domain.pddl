@@ -35,7 +35,7 @@
 	         (in_sun ?w - waypoint)
 )
 
-(:functions (energy ?r - rover) (recharges) )
+(:functions (energy ?r - rover) (total-cost) )
 	
 (:action navigate
 :parameters (?x - rover ?y - waypoint ?z - waypoint) 
@@ -49,7 +49,7 @@
 (:action recharge
 :parameters (?x - rover ?w - waypoint)
 :precondition (and (in ?x ?w) (in_sun ?w) (<= (energy ?x) 80))
-:effect (and (increase (energy ?x) 20) (increase (recharges) 1)) 
+:effect (and (increase (energy ?x) 20) (increase (total-cost) 1)) 
 )
 
 (:action sample_soil

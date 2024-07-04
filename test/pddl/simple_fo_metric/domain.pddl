@@ -17,13 +17,12 @@
 (:functions ;todo: define numeric functions here
 
     (x ?k - num)
-    (cost)
+    (total-cost)
 )
 
 (:action do_b
     :parameters (?v - prop)
-    :effect (and (b ?v)
-                 (increase (cost) 1))
+    :effect (and (b ?v))
 )
 
 
@@ -31,14 +30,14 @@
     :parameters (?v - prop ?k - num)
     :precondition (and (b ?v))
     :effect (and (increase (x ?k) 1)
-                 (increase (cost) 2))
+                 (increase (total-cost) 2))
 )
 
 (:action increase_x
     :parameters (?v - prop ?k - num)
     :precondition (and (b ?v))
     :effect (and (increase (x ?k) 1)
-                 (increase (cost) 1))
+                 (increase (total-cost) 1))
 )
 
 
