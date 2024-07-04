@@ -15,7 +15,7 @@ def test_sequence_compilation():
     reader = PDDLReader()
     problem = reader.parse_problem(domain_path, problem_path)
 
-    problem = normalize(problem)
+    problem, _, _ = normalize(problem)
 
     nbits = 4
     compilation = SequenceCompiler(problem, nbits, optimized=True)

@@ -6,7 +6,7 @@ from pathlib import Path
 import os
 import numpy as np
 from unified_planning.io.pddl_writer import PDDLWriter, ConverterToPDDLString
-from bitblast.axioms_compilation import AxiomsCompiler, Axiom, ProblemAxiomWriter
+from bitblast.base_compilation import BaseCompiler
 from bitblast.normalization import normalize, add_metric
 
 out_path = Path(__file__).parent.parent
@@ -18,16 +18,16 @@ def test_metric_compilation():
     problem, metric, metric_map = normalize(problem)
 
     nbits = 10
-    compilation = AxiomsCompiler(problem, nbits, optimized=True)
-    new_problem, axioms = compilation.get_compiled_problem()
+    compilation = BaseCompiler(problem, nbits, optimized=True)
+    new_problem = compilation.get_compiled_problem()
     
     add_metric(problem=new_problem, metric=metric, metric_map=metric_map)
-    ax_writer = ProblemAxiomWriter(new_problem, axioms)
 
     for act in new_problem.actions:
         metric_effects = metric_map.get(act.name, [])
         for eff in metric_effects:
             assert eff in act.effects
 
-    open(out_path / "compiled_domain.pddl", 'w').write(ax_writer.get_domain())
-    open(out_path / "compiled_problem.pddl", 'w').write(ax_writer.get_problem())
+    writer = PDDLWriter(new_problem)
+    writer.write_problem(out_path / "compiled_problem.pddl")
+    writer.write_domain(out_path / "compiled_domain.pddl")

@@ -249,6 +249,8 @@ def extract_metric(problem: Problem) -> Tuple[PlanQualityMetric, Dict[str, List[
     if len(problem.quality_metrics) == 1:
         metric = problem.quality_metrics[0]
         assert isinstance(metric, PlanQualityMetric)
+        if isinstance(metric, MinimizeActionCosts):
+            return metric, {}
         metric_vars = get_environment().free_vars_extractor.get(metric.expression)
     
         metric_map = {a.name: pop_metric_effects(a, metric_vars) for a in problem.actions}
@@ -263,6 +265,14 @@ def add_metric(problem: Problem, metric: PlanQualityMetric, metric_map: Dict[str
     '''
     Add the metric to the problem
     '''
+    problem.clear_quality_metrics()
+
+    if isinstance(metric, MinimizeActionCosts):
+        action_dict = {}
+        for act, cost in metric.costs.items():
+            action_dict[act.name] = cost
+        metric = MinimizeActionCosts({a: action_dict[a.name] for a in problem.actions})
+
     problem.add_quality_metric(metric)
     for a in problem.actions:
         assert isinstance(a, InstantaneousAction)
