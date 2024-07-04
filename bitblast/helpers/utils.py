@@ -16,6 +16,9 @@ def effects_prop(action: InstantaneousAction) -> Set[Effect]:
 def get_action_effect_map(actions: List[InstantaneousAction]) -> Dict[str, set[Effect]]:
     return {action_name(a): effects(a) for a in actions}
 
+def get_action_name(action: FNode):
+    return action._name
+
 def get_numeric_variables(problem: Problem) -> Set[FNode]:
     ground_fluents = set()
     
@@ -78,9 +81,11 @@ def get_bit_variables(numeric_variables: Set[FNode],
     new_variables_map.update({q: [FluentExp(q_bit) for q_bit in bit_constants[q]] for q in bit_constants.keys()})
     return new_fluents, new_variables_map
 
+
 def set_initial_values(initial_values: Dict[Fluent, bool], var_bits: List[FNode], bits: List[bool]) -> None:
     for var, bit in zip(var_bits, bits):
         initial_values[var] = Bool(bit)
+
 
 def get_bin_initial_state(new_variables_map: Dict[FNode, List[FNode]],
                           initial_values: Dict,
@@ -98,6 +103,7 @@ def get_bin_initial_state(new_variables_map: Dict[FNode, List[FNode]],
         set_initial_values(new_initial_values, var_bits, bits)
 
     return new_initial_values
+
 
 def sign_bit(bits: List[FNode]) -> FNode:
     return bits[-1]
