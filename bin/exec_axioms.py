@@ -19,7 +19,8 @@ def main(domain, problem, output, bits):
     new_problem, axioms = compiler.get_compiled_problem()
     new_problem.name = "CompiledProblem"
 
-    add_metric(problem=new_problem, metric=metric, metric_map=metric_map)
+    if metric is not None:
+        add_metric(problem=new_problem, metric=metric, metric_map=metric_map)
     
     ax_writer = ProblemAxiomWriter(new_problem, axioms)
 

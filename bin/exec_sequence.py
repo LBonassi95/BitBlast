@@ -1,8 +1,9 @@
-from bitblast.base_compilation import *
+from bitblast.axioms_compilation import *
 from unified_planning.io.pddl_reader import PDDLReader
 from unified_planning.io.pddl_writer import PDDLWriter
 from pathlib import Path
 from bitblast.normalization import normalize, add_metric
+from bitblast.sequence_compilation import SequenceCompiler
 import click
 
 @click.command()
@@ -10,13 +11,12 @@ import click
 @click.argument('problem')
 @click.argument('output')
 @click.option('--bits', type=int, required=True)
-@click.option('--optimized', is_flag=True, default=False)
-def main(domain, problem, output, bits, optimized):
+def main(domain, problem, output, bits):
     reader = PDDLReader()
     problem = reader.parse_problem(domain, problem)
     problem, metric, metric_map = normalize(problem)
 
-    compiler = BaseCompiler(problem=problem, nbits=bits, optimized=optimized) 
+    compiler = SequenceCompiler(problem=problem, nbits=bits) 
     new_problem = compiler.get_compiled_problem()
     new_problem.name = "CompiledProblem"
 
