@@ -147,7 +147,7 @@ def build_start_actions(actions, new_variables_map, machinery_map):
     new_actions = []
     pause       = machinery_map["pause"]
     for a in actions:
-        new_action   = InstantaneousAction(f"start__{a.name}")
+        new_action   = InstantaneousAction(a.name)
         action_pause = machinery_map["action_pause"][get_action_name(a)]
         # TODO: refactor?
         for precondition in a.preconditions:

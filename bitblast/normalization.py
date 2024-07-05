@@ -271,7 +271,7 @@ def add_metric(problem: Problem, metric: PlanQualityMetric, metric_map: Dict[str
         action_dict = {}
         for act, cost in metric.costs.items():
             action_dict[act.name] = cost
-        metric = MinimizeActionCosts({a: action_dict[a.name] for a in problem.actions})
+        metric = MinimizeActionCosts({a: action_dict.get(a.name, 0) for a in problem.actions})
 
     problem.add_quality_metric(metric)
     for a in problem.actions:
