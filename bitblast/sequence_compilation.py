@@ -78,6 +78,7 @@ class SequenceCompiler:
         new_problem.add_goal(Not(OF_FLUENT))
         return new_problem
     
+    
 def get_bit_carry_variables(numeric_variables: Set[FNode],
                       actions: Set[FNode], 
                       constants: Set[int], 

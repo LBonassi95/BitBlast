@@ -6,7 +6,7 @@
   )
 
   (:init
-    (= (max_int) 8)
+  (= (max_int) 8)
 	(= (value c0) 0)
 	(= (value c1) 0)
 	(= (value c2) 0)
