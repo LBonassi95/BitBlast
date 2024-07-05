@@ -17,7 +17,7 @@ def test_unitary_compilation():
     reader = PDDLReader()
     problem = reader.parse_problem(domain_path, problem_path)
 
-    problem = normalize(problem)
+    problem, _, _ = normalize(problem)
 
     nbits = 5
     compilation = UnitaryCompiler(problem, nbits)

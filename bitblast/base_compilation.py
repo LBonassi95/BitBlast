@@ -2,11 +2,11 @@ from bitblast.helpers import *
 
 class BaseCompiler:
 
-    def __init__(self, problem: Problem, nbits: int, optimized: bool = False):
+    def __init__(self, problem: Problem, nbits: int):
 
         self.nbits = nbits
         self.problem = problem
-        self.optimized = optimized
+        # self.optimized = optimized
         self.numeric_variables = get_numeric_variables(problem)
         self.constants, self.init_constants = get_constants(problem, get_all_eff_num(problem))
 
@@ -14,8 +14,8 @@ class BaseCompiler:
         constants_abs = {np.abs(constant_value(q)) for q in self.constants.union(self.init_constants)}
         min_bits = int(np.ceil(np.log2(max(constants_abs) + 1)))
         assert nbits >= min_bits
-        if optimized:
-            self.constants = {}
+        # if optimized:
+        self.constants = {}
         
     def get_compiled_problem(self) -> Problem:
 
@@ -26,7 +26,7 @@ class BaseCompiler:
         new_initial_values = get_bin_initial_state(self.new_variables_map, self.problem.initial_values, self.nbits)
 
         # New actions
-        new_actions = [convert_action(action, self.new_variables_map, self.optimized) for action in self.problem.actions]
+        new_actions = [convert_action(action, self.new_variables_map, True) for action in self.problem.actions]
 
         # New goal
         new_goals = And(*[convert_condition(g, self.new_variables_map) for g in self.problem.goals])

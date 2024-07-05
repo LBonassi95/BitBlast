@@ -6,7 +6,7 @@ from bitblast.helpers.conditions_helper import check_condition, convert_conditio
 OF_FLUENT = Fluent("OF", BoolType())
 
 
-def add_bin_effect(new_action: InstantaneousAction, eff: Effect, new_variables_map: Dict[FNode, List[FNode]], optimized = False):
+def add_bin_effect(new_action: InstantaneousAction, eff: Effect, new_variables_map: Dict[FNode, List[FNode]], optimized = True):
     x_bits = new_variables_map[eff.fluent]
     nbits = len(x_bits)
     if optimized:
@@ -30,7 +30,7 @@ def add_bin_effect(new_action: InstantaneousAction, eff: Effect, new_variables_m
     new_action.add_effect(condition=of2, fluent=FluentExp(OF_FLUENT), value=TRUE())
 
 
-def convert_action(act: InstantaneousAction, new_variables_map: Dict[FNode, List[FNode]], optimized = False) -> InstantaneousAction:
+def convert_action(act: InstantaneousAction, new_variables_map: Dict[FNode, List[FNode]], optimized = True) -> InstantaneousAction:
     
     new_action = InstantaneousAction(act.name)
     numeric_effects = effects_num(action=act)
