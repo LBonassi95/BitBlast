@@ -127,6 +127,10 @@ def get_unitary_actions(actions, machinery_map, obj_domain):
                         new_action.add_effect(condition=cond_form, fluent=geq_var, value=TRUE())
                     else:
                         new_action.add_effect(condition=cond_form, fluent=geq_var, value=FALSE())
+        
+        for eff in effects_prop(action=a):
+            new_action.add_effect(condition=eff.condition, fluent=eff.fluent, value=eff.value)
+
 
         new_actions.append(new_action)
     return new_actions

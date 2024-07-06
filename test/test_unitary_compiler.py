@@ -10,8 +10,10 @@ from bitblast.normalization import normalize
 out_path = Path(__file__).parent / "pddl" / "simple" 
 def test_unitary_compilation():
 
-    domain_path = Path(__file__).parent / "pddl" / "counters" / "domain.pddl"
-    problem_path = Path(__file__).parent / "pddl" / "counters" / "instance_4.pddl"
+    # domain_path = Path(__file__).parent / "pddl" / "counters" / "domain.pddl"
+    # problem_path = Path(__file__).parent / "pddl" / "counters" / "instance_4.pddl"
+    domain_path = Path(__file__).parent / "pddl" / "rovers" / "domain.pddl"
+    problem_path = Path(__file__).parent / "pddl" / "rovers" / "pfile1.pddl"
     # domain_path = Path(__file__).parent / "pddl" / "simple" / "domain.pddl"
     # problem_path = Path(__file__).parent / "pddl" / "simple" / "problem.pddl"
     reader = PDDLReader()
@@ -19,7 +21,7 @@ def test_unitary_compilation():
 
     problem, _, _ = normalize(problem)
 
-    nbits = 5
+    nbits = 7
     compilation = UnitaryCompiler(problem, nbits)
     new_problem = compilation.get_compiled_problem()
 

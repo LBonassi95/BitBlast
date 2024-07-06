@@ -11,7 +11,7 @@ out_path = Path(__file__).parent / "pddl" / "simple"
 def test_sequence_compilation():
 
     domain_path = Path(__file__).parent / "pddl" / "counters" / "domain.pddl"
-    problem_path = Path(__file__).parent / "pddl" / "counters" / "instance_4.pddl"
+    problem_path = Path(__file__).parent / "pddl" / "counters" / "pfile1.pddl"
     reader = PDDLReader()
     problem = reader.parse_problem(domain_path, problem_path)
 
