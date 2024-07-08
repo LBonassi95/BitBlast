@@ -21,7 +21,7 @@ _, new_variables_map = get_bit_variables({FluentExp(x)}, {Int(5)}, nbits)
 
 sign_x1 = new_variables_map[FluentExp(x)][nbits-1]
 
-def test_action_conversion():
+def test_action_conversion_variables_full_adder():
 
     x_bits = [FluentExp(Fluent(f"{x.name}_{i}")) for i in range(nbits)]
     q_bits = [FluentExp(Fluent(f"q{0}_{i}")) for i in range(nbits)]
@@ -46,5 +46,10 @@ def test_action_conversion():
 
     act_expected.add_effect(condition=TRUE(), fluent=FluentExp(b), value=TRUE())
 
-    new_action = convert_action(act, new_variables_map)
+    new_action = convert_action(act, new_variables_map, optimized=False)
     assert new_action == act_expected
+
+
+def test_action_conversion():
+    # TODO
+    pytest.fail("Test not implemented")

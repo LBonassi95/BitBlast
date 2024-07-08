@@ -19,7 +19,7 @@ def test_metric_compilation():
     problem, metric, metric_map = normalize(problem)
 
     nbits = 10
-    compilation = BaseCompiler(problem, nbits, optimized=True)
+    compilation = BaseCompiler(problem, nbits)
     new_problem = compilation.get_compiled_problem()
     
     add_metric(problem=new_problem, metric=metric, metric_map=metric_map)
@@ -42,7 +42,7 @@ def test_metric_compilation_sequence():
     problem, metric, metric_map = normalize(problem)
 
     nbits = 10
-    compilation = SequenceCompiler(problem, nbits, optimized=True)
+    compilation = SequenceCompiler(problem, nbits)
     new_problem = compilation.get_compiled_problem()
     
     add_metric(problem=new_problem, metric=metric, metric_map=metric_map)

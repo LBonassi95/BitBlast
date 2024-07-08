@@ -28,10 +28,11 @@ class VariableFactory:
 
 class FormulaNormalizer:
      
-    def __init__(self) -> None:
+    def __init__(self, problem: Problem = None) -> None:
         self.conditions_map: Dict[CanonicalExpression, Fluent] = {}
         self.factory = VariableFactory()
-        self.simplifier = Simplifier(environment=get_environment())
+        # The problem is required to substitue the static variables representing constants
+        self.simplifier = Simplifier(environment=get_environment(), problem=problem) if problem is not None else Simplifier(environment=get_environment())
 
     def get_variable(self, canonical_expression: CanonicalExpression) -> Fluent:
         """
@@ -100,11 +101,12 @@ class FormulaNormalizer:
 def set_normalized_effect(act: InstantaneousAction, eff: Effect, simplifier: Simplifier):
     '''
     Set the effect in the action as an INCREASE effect
+    The simplifier is required to simplify the value of the effect and substitute static variables representing constants
     '''
     if is_propositional_effect(eff):
         act.add_effect(condition=eff.condition, value=eff.value, fluent=eff.fluent)
     elif eff.is_increase():
-        act.add_increase_effect(condition=eff.condition, value=eff.value, fluent=eff.fluent)
+        act.add_increase_effect(condition=eff.condition, value=simplifier.simplify(eff.value), fluent=eff.fluent)
     elif eff.is_decrease():
         act.add_increase_effect(condition=eff.condition, value=simplifier.simplify(-eff.value), fluent=eff.fluent)
     else:
@@ -183,7 +185,7 @@ def remove_unnecessary_effects(normalized_problem: Problem):
 
 def snp_to_rnp(problem: Problem) -> Problem:
 
-    formula_normalizer = FormulaNormalizer()
+    formula_normalizer = FormulaNormalizer(problem)
     state_evaluator = StateEvaluator(problem)
     normalized_problem = Problem(name="normalized")
 
