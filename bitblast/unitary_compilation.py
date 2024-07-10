@@ -12,7 +12,7 @@ class UnitaryCompiler:
         constants_abs    = {np.abs(constant_value(q)) for q in self.constants.union(self.init_constants)}
         min_bits         = int(np.ceil(np.log2(max(constants_abs) + 1)))
         assert nbits    >= min_bits
-        self.obj_domain  = [i for i in range(-pow(2, nbits - 1), pow(2, nbits - 1) - 1)]
+        self.obj_domain  = [i for i in range(-pow(2, nbits - 1), pow(2, nbits - 1))]
         self.constants   = {}
 
 
@@ -85,9 +85,6 @@ def get_unitary_initial(machinery_map: Dict, num_vars, initial_values: Dict, obj
         name  = get_ground_fluent_name(var)
         value = int(str(initial_values[var])) # TODO: fix
         # TODO: fix messaggio di errore bound
-        print ('DEBUG')
-        print(name, value)
-        print (machinery_map["levels"][name].keys())
         level_true = machinery_map["levels"][name][value]
         for _, level_f_var in machinery_map["levels"][name].items():
             if level_f_var != level_true:
