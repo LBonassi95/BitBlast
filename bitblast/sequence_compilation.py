@@ -17,7 +17,11 @@ class SequenceCompiler:
         if optimized:
             self.constants = {}
         
+    def set_has_metric(self, has_metric: bool):
+        self.has_metric = has_metric
+
     def get_compiled_problem(self) -> Problem:
+
         # Binary fluents, variables, and constants
         self.new_fluents, self.new_variables_map, self.machinery_map = get_bit_carry_variables(
             self.numeric_variables, 
@@ -76,6 +80,14 @@ class SequenceCompiler:
         new_problem.add_fluent(OF_FLUENT)
         new_problem.set_initial_value(OF_FLUENT, FALSE())
         new_problem.add_goal(Not(OF_FLUENT))
+
+        # Put 0-action costs when there is no metric
+        if not self.has_metric:
+            action_cost_dict = {a: 0 for a in start_actions}
+            metric = MinimizeActionCosts(action_cost_dict)
+            self.add_quality_metric(metric)
+            exit(1)
+
         return new_problem
     
     

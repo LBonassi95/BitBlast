@@ -48,12 +48,23 @@ def get_constants(problem: Problem, eff_num: Set[Effect]) -> Set[int]:
     return constants, init_constants
 
 def bitblast_int(value: int, nbits: int) -> List[bool]:
-    bits = [bool(int(bit)) for bit in list(np.binary_repr(value, width=nbits))]
-    # Bits are reversed, so we need to reverse them
-    if len(bits) > nbits:
+    if value < -pow(2, nbits - 1) or value > pow(2, nbits - 1) - 1:
         raise OverflowError(OVERFLOW_MSG.format(value=value, nbits=nbits))
+
+    bin_rep = np.binary_repr(value, width=nbits)
+    bits = [bool(int(bit)) for bit in bin_rep]
+    sign    = value >= 0
+    assert (sign and bits[0] == 0) or (not sign and bits[0] == 1)
     bits.reverse()
+    # bits = [bool(int(bit)) for bit in list(np.binary_repr(value, width=nbits))]
+    # Bits are reversed, so we need to reverse them
+    # if len(bits) > nbits:
+    #     raise OverflowError(OVERFLOW_MSG.format(value=value, nbits=nbits))
     return bits
+
+def two_complement(value, bits):
+    pass
+
 
 SEP = "--"
 

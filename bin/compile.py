@@ -34,8 +34,12 @@ def main(domain, problem, output, bits, mode):
     reader = PDDLReader()
     problem = reader.parse_problem(domain, problem)
     problem, metric, metric_map = normalize(problem)
-    
+
     compiler = compilations[mode](problem=problem, nbits=bits)
+    # print ('DEBUG')
+    if isinstance(compiler, SequenceCompiler):
+        # print (metric)
+        compiler.set_has_metric(metric is None)
 
     # TODO: create a superclass
     if isinstance(compiler, BaseCompiler) or isinstance(compiler, SequenceCompiler) or isinstance(compiler, UnitaryCompiler):

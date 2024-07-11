@@ -85,6 +85,7 @@ def get_unitary_initial(machinery_map: Dict, num_vars, initial_values: Dict, obj
         name  = get_ground_fluent_name(var)
         value = int(str(initial_values[var])) # TODO: fix
         # TODO: fix messaggio di errore bound
+        print ('DEBUG', name, value)
         level_true = machinery_map["levels"][name][value]
         for _, level_f_var in machinery_map["levels"][name].items():
             if level_f_var != level_true:
