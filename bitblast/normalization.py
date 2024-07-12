@@ -178,10 +178,9 @@ def remove_unnecessary_effects(normalized_problem: Problem):
 
     for a in normalized_problem.actions:
         assert isinstance(a, InstantaneousAction)
-        for eff in a.effects:
-            assert isinstance(eff, Effect)
-            if eff.fluent in unnecessary_vars:
-                a.effects.remove(eff)
+        effects_to_remove = [eff for eff in a.effects if eff.fluent in unnecessary_vars]
+        for eff in effects_to_remove:
+            a.effects.remove(eff)
 
 def snp_to_rnp(problem: Problem) -> Problem:
 

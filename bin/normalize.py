@@ -12,7 +12,7 @@ import click
 def main(domain, problem, output):
     reader = PDDLReader()
     problem = reader.parse_problem(domain, problem)
-    problem = normalize(problem)
+    problem, _, _ = normalize(problem)
     writer = PDDLWriter(problem, needs_requirements=False)
     writer.write_domain(Path(output) / 'normalized_dom.pddl')
     writer.write_problem(Path(output) / 'normalized_prob.pddl')

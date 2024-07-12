@@ -17,7 +17,7 @@ def test_sequence_compilation():
 
     problem, _, _ = normalize(problem)
 
-    nbits = 4
+    nbits = 5
     compilation = SequenceCompiler(problem, nbits)
     new_problem = compilation.get_compiled_problem()
 

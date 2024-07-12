@@ -73,4 +73,25 @@ def test_normalization():
     reader = PDDLReader()
     problem = reader.parse_problem(domain_path, problem_path)
     problem = normalize(problem)
-    print()
+
+
+def test_remove_unnecessary_effects():
+    domain_path = Path(__file__).parent / "pddl" / "farmland" / "domain.pddl"
+    problem_path = Path(__file__).parent / "pddl" / "farmland" / "problem.pddl"
+    reader = PDDLReader()
+    problem = reader.parse_problem(domain_path, problem_path)
+    problem, _, _ = normalize(problem)
+
+    x = [fl for fl in problem.fluents if fl.name == "x"][0]
+
+    farm0 = problem.all_objects[0]
+    farm1 = problem.all_objects[1]
+
+    for action in problem.actions:
+        for eff in action.effects:
+            assert not eff.fluent == x(farm0)
+            assert not eff.fluent == x(farm1)
+
+
+if __name__ == "__main__":
+    test_remove_unnecessary_effects()
