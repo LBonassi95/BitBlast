@@ -47,7 +47,7 @@ def get_constants(problem: Problem, eff_num: Set[Effect]) -> Set[int]:
     init_constants = {v for v in problem.initial_values.values() if is_int_constant(v)}
     return constants, init_constants
 
-def bitblast_int(value: int, nbits: int) -> List[bool]:
+def bitblast_int(value: int, nbits: int, flipped: Bool) -> List[bool]:
     if value < -pow(2, nbits - 1) or value > pow(2, nbits - 1) - 1:
         raise OverflowError(OVERFLOW_MSG.format(value=value, nbits=nbits))
 
@@ -56,11 +56,10 @@ def bitblast_int(value: int, nbits: int) -> List[bool]:
     sign    = value >= 0
     assert (sign and bits[0] == 0) or (not sign and bits[0] == 1)
     bits.reverse()
-    # bits = [bool(int(bit)) for bit in list(np.binary_repr(value, width=nbits))]
-    # Bits are reversed, so we need to reverse them
-    # if len(bits) > nbits:
-    #     raise OverflowError(OVERFLOW_MSG.format(value=value, nbits=nbits))
-    return bits
+    if not flipped:
+        return bits
+    else:
+        return [True if b == False else False for b in bits]
 
 def two_complement(value, bits):
     pass
@@ -100,17 +99,17 @@ def set_initial_values(initial_values: Dict[Fluent, bool], var_bits: List[FNode]
 
 def get_bin_initial_state(new_variables_map: Dict[FNode, List[FNode]],
                           initial_values: Dict,
-                          nbits: int) -> Dict[Fluent, bool]:
+                          nbits: int, flipped: Bool) -> Dict[Fluent, bool]:
 
     # Copy all boolean initial values
     new_initial_values = {k: v for k, v in initial_values.items() if is_bool_constant(v)}
 
     for var, var_bits in new_variables_map.items():
         if is_int_constant(var):
-            bits = bitblast_int(constant_value(var), nbits)
+            bits = bitblast_int(constant_value(var), nbits, flipped)
         else:
             assert var.is_fluent_exp()
-            bits = bitblast_int(constant_value(initial_values[var]), nbits)
+            bits = bitblast_int(constant_value(initial_values[var]), nbits, flipped)
         set_initial_values(new_initial_values, var_bits, bits)
 
     return new_initial_values

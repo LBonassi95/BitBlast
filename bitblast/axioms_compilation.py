@@ -44,14 +44,14 @@ class ProblemAxiomWriter:
 
 class AxiomsCompiler:
 
-    def __init__(self, problem: Problem, nbits: int, optimized: bool = False):
+    def __init__(self, problem: Problem, nbits: int, optimized: bool = False, flipped: bool = False):
 
         self.nbits = nbits
         self.problem = problem
         self.optimized = optimized
         self.numeric_variables = get_numeric_variables(problem)
         self.constants, self.init_constants = get_constants(problem, get_all_eff_num(problem))
-
+        self.flipped = flipped
 
         constants_abs = {np.abs(constant_value(q)) for q in self.constants.union(self.init_constants)}
         min_bits = int(np.ceil(np.log2(max(constants_abs) + 1)))
@@ -66,7 +66,8 @@ class AxiomsCompiler:
         self.new_fluents, self.new_variables_map = get_bit_variables(self.numeric_variables, self.constants, self.nbits)
 
         # New initial values
-        new_initial_values = get_bin_initial_state(self.new_variables_map, self.problem.initial_values, self.nbits)
+        new_initial_values = get_bin_initial_state(
+            self.new_variables_map, self.problem.initial_values, self.nbits, self.flipped)
 
         # New axioms
         self.all_axioms, self.effects_axioms_map = self.compute_axioms()
@@ -75,7 +76,7 @@ class AxiomsCompiler:
         new_actions = [self.convert_action(action) for action in self.problem.actions]
 
         # New goal
-        new_goals = And(*[convert_condition(g, self.new_variables_map) for g in self.problem.goals])
+        new_goals = And(*[convert_condition(g, self.new_variables_map, self.flipped) for g in self.problem.goals])
         
         # Create the new problem
         new_problem = Problem(name='compiled')
@@ -126,7 +127,7 @@ class AxiomsCompiler:
     def compute_effect_axioms(self, eff: Effect, eff_label: int) -> List[Axiom]:
 
         x_bits = self.new_variables_map[eff.fluent]
-        q_bits = bitblast_int(constant_value(eff.value), len(x_bits))
+        q_bits = bitblast_int(constant_value(eff.value), len(x_bits), self.flipped)
         q_bits = [TRUE() if q_bits[i] else FALSE() for i in range(len(x_bits))]
 
         circuit = compact_full_adder_circuit(x_bits, q_bits, eff_label)
@@ -157,7 +158,7 @@ class AxiomsCompiler:
 
         for precondition in act.preconditions:
             assert check_condition(precondition)
-            new_action.add_precondition(convert_condition(precondition, self.new_variables_map))
+            new_action.add_precondition(convert_condition(precondition, self.new_variables_map, self.flipped))
 
         for eff in numeric_effects:
             for var, dp in self.effects_axioms_map[eff].items():

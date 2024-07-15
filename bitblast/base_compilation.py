@@ -23,13 +23,13 @@ class BaseCompiler:
         self.new_fluents, self.new_variables_map = get_bit_variables(self.numeric_variables, self.constants, self.nbits)
 
         # New initial values
-        new_initial_values = get_bin_initial_state(self.new_variables_map, self.problem.initial_values, self.nbits)
+        new_initial_values = get_bin_initial_state(self.new_variables_map, self.problem.initial_values, self.nbits, False)
 
         # New actions
         new_actions = [convert_action(action, self.new_variables_map, True) for action in self.problem.actions]
 
         # New goal
-        new_goals = And(*[convert_condition(g, self.new_variables_map) for g in self.problem.goals])
+        new_goals = And(*[convert_condition(g, self.new_variables_map, False) for g in self.problem.goals])
         
         # Create the new problem
         new_problem = Problem(name='compiled')

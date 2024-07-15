@@ -10,7 +10,7 @@ def add_bin_effect(new_action: InstantaneousAction, eff: Effect, new_variables_m
     x_bits = new_variables_map[eff.fluent]
     nbits = len(x_bits)
     if optimized:
-        q_bits = bitblast_int(constant_value(eff.value), nbits)
+        q_bits = bitblast_int(constant_value(eff.value), nbits, False)
         q_bits = [TRUE() if q_bits[i] else FALSE() for i in range(nbits)]
     else:
         q_bits = new_variables_map[eff.value]
@@ -37,7 +37,7 @@ def convert_action(act: InstantaneousAction, new_variables_map: Dict[FNode, List
 
     for precondition in act.preconditions:
         assert check_condition(precondition)
-        new_action.add_precondition(convert_condition(precondition, new_variables_map))
+        new_action.add_precondition(convert_condition(precondition, new_variables_map, False))
 
     for eff in numeric_effects:
         add_bin_effect(new_action, eff, new_variables_map, optimized=optimized)

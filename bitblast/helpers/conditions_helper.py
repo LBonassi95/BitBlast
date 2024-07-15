@@ -19,24 +19,27 @@ def check_ge_zero(condition: FNode) -> bool:
            condition.args[1].is_fluent_exp()
 
 
-def convert_ge_zero(condition: FNode, bin_fluents_exp: Dict[FNode, List[FNode]]) -> FNode:
+def convert_ge_zero(condition: FNode, bin_fluents_exp: Dict[FNode, List[FNode]], flipped) -> FNode:
     var = condition.args[1]
-    return Not(sign_bit(bin_fluents_exp[var]))
+    if not flipped:
+        return Not(sign_bit(bin_fluents_exp[var]))
+    else:
+        return sign_bit(bin_fluents_exp[var])
 
 
-def convert_condition(condition: FNode, bin_fluents_exp: Dict[FNode, List[FNode]]) -> FNode:
+def convert_condition(condition: FNode, bin_fluents_exp: Dict[FNode, List[FNode]], flipped: True) -> FNode:
     """
     Convert a condition to a bitblasted condition.
     Precondition: check_condition(condition) == True
     """
     if condition.is_and():
-        return And(*[convert_condition(c, bin_fluents_exp) for c in condition.args])
+        return And(*[convert_condition(c, bin_fluents_exp, flipped) for c in condition.args])
     elif condition.is_or():
-        return Or(*[convert_condition(c, bin_fluents_exp) for c in condition.args])
+        return Or(*[convert_condition(c, bin_fluents_exp, flipped) for c in condition.args])
     elif condition.is_not():
-        return Not(convert_condition(condition.args[0], bin_fluents_exp))
+        return Not(convert_condition(condition.args[0], bin_fluents_exp, flipped))
     elif condition.is_le():
-        return convert_ge_zero(condition, bin_fluents_exp)
+        return convert_ge_zero(condition, bin_fluents_exp, flipped)
     else:
         # A boolean fluent expression
         return condition
