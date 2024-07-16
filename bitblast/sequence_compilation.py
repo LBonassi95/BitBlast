@@ -78,6 +78,8 @@ class SequenceCompiler:
         new_problem.add_fluent(OF_FLUENT)
         new_problem.set_initial_value(OF_FLUENT, FALSE())
         new_problem.add_goal(Not(OF_FLUENT))
+        new_problem.add_goal(Not(self.machinery_map["pause"]))
+
 
         # Put 0-action costs when there is no metric
         if not self.has_metric:
@@ -167,6 +169,7 @@ def build_start_actions(actions, new_variables_map, machinery_map, flipped):
                 precondition, new_variables_map, flipped))
         
         new_action.add_precondition(Not(pause))
+        new_action.add_precondition(Not(OF_FLUENT))
         
         # TODO: refactor?
         for eff in effects_prop(action=a):
@@ -194,6 +197,7 @@ def build_add_actions(actions, new_variables_map, machinery_map, nbits, flipped)
             new_action.add_precondition(pause)
             new_action.add_precondition(action_pause)
             new_action.add_precondition(done_i)
+            new_action.add_precondition(Not(OF_FLUENT))
 
             new_action.add_effect(done_i, False)
             new_action.add_effect(done_i_next, True)
@@ -218,6 +222,7 @@ def build_end_actions(actions, machinery_map, nbits):
         new_action.add_precondition(pause)
         new_action.add_precondition(action_pause)
         new_action.add_precondition(machinery_map["done"][nbits])
+        new_action.add_precondition(Not(OF_FLUENT))
 
         new_action.add_effect(pause, False)
         new_action.add_effect(action_pause, False)

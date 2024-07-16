@@ -39,6 +39,8 @@ def convert_action(act: InstantaneousAction, new_variables_map: Dict[FNode, List
         assert check_condition(precondition)
         new_action.add_precondition(convert_condition(precondition, new_variables_map, False))
 
+    new_action.add_precondition(Not(OF_FLUENT))
+
     for eff in numeric_effects:
         add_bin_effect(new_action, eff, new_variables_map, optimized=optimized)
     

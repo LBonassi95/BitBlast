@@ -159,6 +159,7 @@ class AxiomsCompiler:
         for precondition in act.preconditions:
             assert check_condition(precondition)
             new_action.add_precondition(convert_condition(precondition, self.new_variables_map, self.flipped))
+        new_action.add_precondition(Not(OF_FLUENT))
 
         for eff in numeric_effects:
             for var, dp in self.effects_axioms_map[eff].items():
