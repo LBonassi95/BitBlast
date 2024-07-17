@@ -38,7 +38,6 @@ def main(domain, problem, output, bits, mode):
     compiler = compilations[mode](problem=problem, nbits=bits)
     # print ('DEBUG')
     if isinstance(compiler, SequenceCompiler):
-        # print (metric)
         compiler.set_has_metric(metric is None)
 
     # TODO: create a superclass
