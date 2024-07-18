@@ -252,18 +252,15 @@ def add_bin_bit_effect(action, neff, machinery_map, new_variables_map, i, nbits,
     add_neg_formula   = Not(add_formula).simplify()
     carry_neg_formula = Not(carry_formula).simplify()
 
-    # action.add_effect(condition=add_formula, fluent=x_bits[i], value=TRUE())
-    # action.add_effect(condition=add_neg_formula, fluent=x_bits[i], value=FALSE())
-    # action.add_effect(condition=carry_formula, fluent=carries[i + 1], value=TRUE())
-    # action.add_effect(condition=carry_neg_formula, fluent=carries[i + 1], value=FALSE())
     action.add_effect(condition=add_formula, fluent=x_bits[i], value=not(flipped))
     action.add_effect(condition=add_neg_formula, fluent=x_bits[i], value=flipped)
     action.add_effect(condition=carry_formula, fluent=carries[i + 1], value=not(flipped))
     action.add_effect(condition=carry_neg_formula, fluent=carries[i + 1], value=flipped)
 
     if i == nbits - 1:
+        i_result = XOr(XOr(x_bits[i], q_bits[i]), carries[i]).simplify()
         of_formula = Or(
-            And(x_bits[i], q_bits[i], Not(carries[i])),
-            And(Not(x_bits[i]), Not(q_bits[i]), carries[i])
+            And(x_bits[i], q_bits[i], Not(i_result)),
+            And(Not(x_bits[i]), Not(q_bits[i]), i_result)
         ).simplify()
         action.add_effect(condition=of_formula, fluent=OF_FLUENT, value=TRUE())
