@@ -119,8 +119,8 @@ class AxiomsCompiler:
         # ideally, we would like to use the name of the variable and the value
         for eff_label, eff in enumerate(numeric_effects):
             
-            carry_axioms, sum_axioms, overflow_axiom, var_to_dp_map = self.compute_effect_axioms(eff, eff_label)
-            all_axioms += carry_axioms + sum_axioms + [overflow_axiom]
+            carry_axioms, sum_axioms, overflow_axioms, var_to_dp_map = self.compute_effect_axioms(eff, eff_label)
+            all_axioms += carry_axioms + sum_axioms + overflow_axioms
 
             effects_axioms_map[eff] = var_to_dp_map
 
@@ -134,23 +134,27 @@ class AxiomsCompiler:
 
         circuit = compact_full_adder_circuit(x_bits, q_bits, eff_label)
 
-        carry_axioms = [Axiom(carry_fl(-1, eff_label), FluentExp(self.false))] + \
-                       [Axiom(carry_fl(i, eff_label), circuit["c"][carry_fl(i, eff_label)]) for i in range(len(x_bits))]
-        sum_axioms = [Axiom(sum_fl(i, eff_label), circuit["z"][sum_fl(i, eff_label)]) for i in range(len(x_bits))]
+        # carry_axioms = [Axiom(carry_fl(-1, eff_label), FluentExp(self.false))] + \
+        #                [Axiom(carry_fl(i, eff_label), circuit["c"][carry_fl(i, eff_label)]) for i in range(len(x_bits))]
+        carry_axioms = [Axiom(carry_fl(i, eff_label), circuit["c"][carry_fl(i, eff_label)]) for i in range(len(x_bits))]
+        # sum_axioms = [Axiom(sum_fl(i, eff_label), circuit["z"][sum_fl(i, eff_label)]) for i in range(len(x_bits))]
 
-        var_to_dp_map = {x_bits[i]: sum_fl(i, eff_label) for i in range(len(x_bits))}
+        # var_to_dp_map = {x_bits[i]: sum_fl(i, eff_label) for i in range(len(x_bits))}
+        var_to_dp_map = {x_bits[i]: circuit["z"][sum_fl(i, eff_label)] for i in range(len(x_bits))}
 
         sign_x = sign_bit(x_bits)
         sign_q = sign_bit(q_bits)
-        sign_sum = sum_fl(len(x_bits)-1, eff_label)
+        sign_sum = circuit["z"][sum_fl(len(x_bits)-1, eff_label)]
 
-        of_head = Fluent(f'of_{eff_label}', BoolType())
-        of_body = Or(And(sign_x, sign_q, Not(sign_sum)), And(Not(sign_x), Not(sign_q), sign_sum))
-        overflow_axiom = Axiom(of_head, of_body)
+        # of_head = Fluent(f'of_{eff_label}', BoolType())
+        # of_body = Or(And(sign_x, sign_q, Not(sign_sum)), And(Not(sign_x), Not(sign_q), sign_sum))
+        # of_body = Or(And(sign_x, sign_q, Not(sign_sum)), And(Not(sign_x), Not(sign_q), sign_sum))
+        # overflow_axiom = Axiom(of_head, of_body)
 
-        var_to_dp_map[FluentExp(OF_FLUENT)] = of_head
+        var_to_dp_map[FluentExp(OF_FLUENT)] = Or(And(sign_x, sign_q, Not(sign_sum)), And(Not(sign_x), Not(sign_q), sign_sum))
 
-        return carry_axioms, sum_axioms, overflow_axiom, var_to_dp_map
+        # return carry_axioms, sum_axioms, [overflow_axiom], var_to_dp_map
+        return carry_axioms, [], [], var_to_dp_map
     
 
     def convert_action(self, act: InstantaneousAction) -> InstantaneousAction:
