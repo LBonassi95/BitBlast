@@ -134,9 +134,9 @@ class AxiomsCompiler:
 
         circuit = compact_full_adder_circuit(x_bits, q_bits, eff_label)
 
-        # carry_axioms = [Axiom(carry_fl(-1, eff_label), FluentExp(self.false))] + \
-        #                [Axiom(carry_fl(i, eff_label), circuit["c"][carry_fl(i, eff_label)]) for i in range(len(x_bits))]
-        carry_axioms = [Axiom(carry_fl(i, eff_label), circuit["c"][carry_fl(i, eff_label)]) for i in range(len(x_bits))]
+        carry_axioms = [Axiom(carry_fl(-1, eff_label), FluentExp(self.false))] + \
+                       [Axiom(carry_fl(i, eff_label), circuit["c"][carry_fl(i, eff_label)]) for i in range(len(x_bits))]
+        # carry_axioms = [Axiom(carry_fl(i, eff_label), circuit["c"][carry_fl(i, eff_label)]) for i in range(len(x_bits))]
         # sum_axioms = [Axiom(sum_fl(i, eff_label), circuit["z"][sum_fl(i, eff_label)]) for i in range(len(x_bits))]
 
         # var_to_dp_map = {x_bits[i]: sum_fl(i, eff_label) for i in range(len(x_bits))}

@@ -183,6 +183,8 @@ def remove_unnecessary_effects(normalized_problem: Problem):
         for eff in effects_to_remove:
             a.effects.remove(eff)
 
+    return unnecessary_vars
+
 @profile
 def snp_to_rnp(problem: Problem) -> Problem:
 
@@ -224,7 +226,27 @@ def snp_to_rnp(problem: Problem) -> Problem:
         normalized_problem.set_initial_value(var, value)
 
     # Remove unnecessary effects
-    remove_unnecessary_effects(normalized_problem)
+    unnecessary_vars = remove_unnecessary_effects(normalized_problem)
+    unnecessary_vars = set([v for v in unnecessary_vars if isinstance(v, FNode) and v.fluent().type == RealType()])
+
+    vars = get_numeric_variables(problem)
+    new_vars = [v() for v in formula_normalizer.conditions_map.values()]
+
+    N_size = len(vars)
+    N_new_size = N_size + len(new_vars) - len(unnecessary_vars)
+
+    print('Normalization results:')
+    print('----------------------')
+    print('Numeric variables:', vars)
+    print('New variables:', new_vars)
+    print('Removed variables:', unnecessary_vars)
+
+    print('----------------------')
+    print('|N|:', N_size)
+    print('|N_prime|:', N_new_size)
+    print(f'|N|/|N_prime|: {N_new_size/N_size:.3f}')
+    print('----------------------')
+
 
     return normalized_problem
 

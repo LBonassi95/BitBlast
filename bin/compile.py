@@ -8,6 +8,7 @@ from pathlib import Path
 from bitblast.normalization import normalize, add_metric
 import click
 from line_profiler import *
+import time
 
 BASE = 0
 SEQUENCE = 1
@@ -33,9 +34,11 @@ compilations = {
 @click.option('--unitary', 'mode', flag_value=UNITARY)
 @profile
 def main(domain, problem, output, bits, mode):
+    start = time.time()
     reader = PDDLReader()
     problem = reader.parse_problem(domain, problem)
     problem, metric, metric_map = normalize(problem)
+    print(f"Normalization time: {time.time() - start:.3f}")
 
     compiler = compilations[mode](problem=problem, nbits=bits)
     # print ('DEBUG')
@@ -63,6 +66,7 @@ def main(domain, problem, output, bits, mode):
         writer = PDDLWriter(new_problem, needs_requirements=False)
         writer.write_domain(Path(output) / 'compiled_dom.pddl')
         writer.write_problem(Path(output) / 'compiled_prob.pddl')
+    print(f"Total Compilation time: {time.time() - start:.3f}")
 
 
 if __name__ == '__main__':

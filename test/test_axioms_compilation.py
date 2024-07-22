@@ -43,7 +43,7 @@ def test_compilation_fo():
 
 
 
-def test_compilation_farmland():
+def test_compilation_drone():
     domain_path = Path(__file__).parent / "pddl" / "drone" / "domain.pddl"
     problem_path = Path(__file__).parent / "pddl" / "drone" / "problem.pddl"
     reader = PDDLReader()
@@ -57,6 +57,26 @@ def test_compilation_farmland():
     carry_axioms = [ax for ax in axioms if 'c' in ax.head.name]
 
     assert len(carry_axioms) <= nbits * 38 
+ 
+    ax_writer = ProblemAxiomWriter(new_problem, axioms)
+
+    open(out_path / "compiled_domain.pddl", 'w').write(ax_writer.get_domain())
+    open(out_path / "compiled_problem.pddl", 'w').write(ax_writer.get_problem())
+
+
+def test_compilation_farmland():
+    domain_path = Path(__file__).parent / "pddl" / "farmland" / "domain.pddl"
+    problem_path = Path(__file__).parent / "pddl" / "farmland" / "problem.pddl"
+    reader = PDDLReader()
+    problem = reader.parse_problem(domain_path, problem_path)
+    problem, _, _ = normalize(problem)
+
+    nbits = 15
+    compilation = AxiomsCompiler(problem, nbits, optimized=True)
+    new_problem, axioms = compilation.get_compiled_problem()
+
+    carry_axioms = [ax for ax in axioms if 'c' in ax.head.name]
+
  
     ax_writer = ProblemAxiomWriter(new_problem, axioms)
 

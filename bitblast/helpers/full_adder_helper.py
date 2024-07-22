@@ -21,16 +21,13 @@ def sum_fl(i: int, label: str = None) -> Fluent:
 
 def compact_full_adder_circuit(x_bits: List[FNode], q_bits: List[FNode], label: str = None):
     assert len(x_bits) == len(q_bits), "The number of bits in x and q must be the same"
-    circuit = {'c': {}, 'z': {}}
+    circuit = {'c': {carry_fl(-1, label): FALSE()}, 'z': {}}
 
     for i in range(len(x_bits)):
         curr_carry = carry_fl(i, label)
         curr_sum = sum_fl(i, label)
-        if i == 0:
-            prev_carry = FALSE()
-        else:
-            prev_carry = FluentExp(carry_fl(i-1, label))
-        circuit['z'][curr_sum] = XOr(XOr(x_bits[i], q_bits[i]), prev_carry).simplify()
-        circuit['c'][curr_carry] = Or(And(x_bits[i], q_bits[i]), And(prev_carry, XOr(x_bits[i], q_bits[i]))).simplify()
+        prev_carry = carry_fl(i-1, label)
+        circuit['z'][curr_sum] = XOr(XOr(x_bits[i], q_bits[i]), prev_carry()).simplify()
+        circuit['c'][curr_carry] = Or(And(x_bits[i], q_bits[i]), And(prev_carry(), XOr(x_bits[i], q_bits[i]))).simplify()
 
     return circuit
