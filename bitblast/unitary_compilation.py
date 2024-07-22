@@ -35,11 +35,9 @@ class UnitaryCompiler:
         # Create the new problem
         new_problem = Problem(name='compiled')
 
-        new_problem.add_fluents(self.new_fluents)
-
-        # Add all the original boolean fluents
-        boolean_fluents = set(fl for fl in self.problem.fluents if fl.type == BoolType())
-        new_problem.add_fluents(boolean_fluents)
+        # Add all fluents
+        boolean_fluents = [fl for fl in self.problem.fluents if fl.type == BoolType()]
+        new_problem._fluents = boolean_fluents + self.new_fluents
         
         for var, initial_val in new_initial_values.items():
             new_problem.set_initial_value(var, initial_val)

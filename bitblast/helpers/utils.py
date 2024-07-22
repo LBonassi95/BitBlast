@@ -99,7 +99,7 @@ def set_initial_values(initial_values: Dict[Fluent, bool], var_bits: List[FNode]
 
 def get_bin_initial_state(new_variables_map: Dict[FNode, List[FNode]],
                           initial_values: Dict,
-                          nbits: int, flipped: Bool) -> Dict[Fluent, bool]:
+                          nbits: int, flipped: bool = False) -> Dict[Fluent, bool]:
 
     # Copy all boolean initial values
     new_initial_values = {k: v for k, v in initial_values.items() if is_bool_constant(v)}

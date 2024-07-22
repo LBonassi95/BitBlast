@@ -27,7 +27,7 @@ def convert_ge_zero(condition: FNode, bin_fluents_exp: Dict[FNode, List[FNode]],
         return sign_bit(bin_fluents_exp[var])
 
 
-def convert_condition(condition: FNode, bin_fluents_exp: Dict[FNode, List[FNode]], flipped: True) -> FNode:
+def convert_condition(condition: FNode, bin_fluents_exp: Dict[FNode, List[FNode]], flipped: bool = False) -> FNode:
     """
     Convert a condition to a bitblasted condition.
     Precondition: check_condition(condition) == True

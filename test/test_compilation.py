@@ -71,3 +71,9 @@ def test_compilation_delivery():
     writer.write_problem(out_path / "compiled_problem.pddl")
     writer.write_domain(out_path / "compiled_domain.pddl")
 
+
+if __name__ == "__main__":
+    test_compilation()
+    test_sequence_compilation()
+    test_compilation_fo()
+    test_compilation_delivery()

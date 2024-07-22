@@ -1,6 +1,6 @@
 from bitblast.helpers import *
 from unified_planning.io.pddl_writer import ConverterToPDDLString, PDDLWriter
-
+from line_profiler import *
 
 class Axiom:
     
@@ -57,7 +57,8 @@ class AxiomsCompiler:
         min_bits = int(np.ceil(np.log2(max(constants_abs) + 1)))
         assert nbits >= min_bits
         self.constants = {}
-        
+    
+    @profile
     def get_compiled_problem(self) -> Tuple[Problem, List[Axiom]]:
 
         self.false = Fluent("FALSE", BoolType())
@@ -81,18 +82,19 @@ class AxiomsCompiler:
         # Create the new problem
         new_problem = Problem(name='compiled')
 
-        new_problem.add_fluents(self.new_fluents)
+        new_fluents_ax = [ax.get_derived_fluent() for ax in self.all_axioms] + [self.false]
 
-        # Add all the original boolean fluents
-        boolean_fluents = set(fl for fl in self.problem.fluents if fl.type == BoolType())
-        new_problem.add_fluents(boolean_fluents)
+        # Add all fluents
+        boolean_fluents = [fl for fl in self.problem.fluents if fl.type == BoolType()]
+        new_problem._fluents = new_fluents_ax + self.new_fluents + boolean_fluents
         
         for var, initial_val in new_initial_values.items():
             new_problem.set_initial_value(var, initial_val)
 
-        # Add new derived predicates
-        for dp in [ax.head for ax in self.all_axioms] + [self.false]:
-            new_problem.add_fluent(dp, default_initial_value=FALSE())
+        for new_fl in new_fluents_ax:
+            new_problem.set_initial_value(new_fl, FALSE())
+        # for dp in [ax.head for ax in self.all_axioms] + [self.false]:
+        #     new_problem.add_fluent(dp, default_initial_value=FALSE())
 
         new_problem.add_actions(new_actions)
         new_problem.add_goal(new_goals)

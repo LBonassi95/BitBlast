@@ -12,6 +12,7 @@ from unified_planning.model.walkers.state_evaluator import StateEvaluator
 from unified_planning.model.state import UPState
 from unified_planning.model.walkers import FreeVarsExtractor
 from unified_planning.model.metrics import PlanQualityMetric
+from line_profiler import *
 
 
 class VariableFactory:
@@ -182,6 +183,7 @@ def remove_unnecessary_effects(normalized_problem: Problem):
         for eff in effects_to_remove:
             a.effects.remove(eff)
 
+@profile
 def snp_to_rnp(problem: Problem) -> Problem:
 
     formula_normalizer = FormulaNormalizer(problem)
@@ -287,7 +289,7 @@ def add_metric(problem: Problem, metric: PlanQualityMetric, metric_map: Dict[str
                 assert eff.is_assignment()
                 a.add_effect(condition=eff.condition, fluent=eff.fluent, value=eff.value)
 
-
+@profile
 def normalize(problem: Problem) -> Tuple[Problem, PlanQualityMetric, Dict[str, List[Effect]]]:
     grounder = Compiler(compilation_kind = CompilationKind.GROUNDING)
     quantifier_remover = Compiler(compilation_kind = CompilationKind.QUANTIFIERS_REMOVING)
