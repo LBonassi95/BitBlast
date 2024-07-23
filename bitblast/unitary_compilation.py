@@ -47,6 +47,7 @@ class UnitaryCompiler:
         new_goals = And(*[convert_unitary_condition(g, self.machinery_map) for g in self.problem.goals])
 
         new_problem.add_goal(new_goals)
+        new_problem.add_goal(Not(OF_FLUENT))
 
         # Add objects and constants
         new_problem.add_objects(self.problem.all_objects)
@@ -72,7 +73,7 @@ def get_unitary_variables(num_vars: Set[FNode], obj_domain):
         geq_num_var = Fluent(f"geq_{num_var_name}")
         new_fluents.append(geq_num_var)
         machinery_map['geq'][num_var_name] = geq_num_var
-
+    new_fluents.append(OF_FLUENT)
     return new_fluents, machinery_map
 
 
@@ -94,7 +95,7 @@ def get_unitary_initial(machinery_map: Dict, num_vars, initial_values: Dict, obj
             new_initial_values[geq_var] = TRUE()
         else:
             new_initial_values[geq_var] = FALSE()
-
+    new_initial_values[OF_FLUENT] = FALSE()
     return new_initial_values
 
 
@@ -105,6 +106,7 @@ def get_unitary_actions(actions, machinery_map, obj_domain):
         for precondition in a.preconditions:
             prec_formula = convert_unitary_condition(precondition, machinery_map)
             new_action.add_precondition(prec_formula)
+            new_action.add_precondition(Not(OF_FLUENT))
 
         for neff in effects_num(a):
             nvar = neff.fluent
@@ -112,8 +114,11 @@ def get_unitary_actions(actions, machinery_map, obj_domain):
             geq_var = machinery_map["geq"][get_ground_fluent_name(nvar)]
             for i in obj_domain:
                 j = i + ncon
+                '''
+                obj_domain[0]  = lower bound
+                obj_domain[-1] = upper bound
+                '''
                 if j >= obj_domain[0] and j <= obj_domain[-1]:
-
                     past_cond = machinery_map["levels"][get_ground_fluent_name(nvar)][i]
                     futu_cond = machinery_map["levels"][get_ground_fluent_name(nvar)][j]
                     cond_form = And(past_cond)
@@ -123,7 +128,11 @@ def get_unitary_actions(actions, machinery_map, obj_domain):
                         new_action.add_effect(condition=cond_form, fluent=geq_var, value=TRUE())
                     else:
                         new_action.add_effect(condition=cond_form, fluent=geq_var, value=FALSE())
-        
+                elif j < obj_domain[0] or j > obj_domain[-1]:
+                    past_cond = machinery_map["levels"][get_ground_fluent_name(nvar)][i]
+                    cond_form = And(past_cond)
+                    new_action.add_effect(condition=cond_form, fluent=OF_FLUENT, value=TRUE())
+
         for eff in effects_prop(action=a):
             new_action.add_effect(condition=eff.condition, fluent=eff.fluent, value=eff.value)
 

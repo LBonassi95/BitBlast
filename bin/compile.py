@@ -7,7 +7,7 @@ from unified_planning.io.pddl_writer import PDDLWriter
 from pathlib import Path
 from bitblast.normalization import normalize, add_metric
 import click
-from line_profiler import *
+# from line_profiler import *
 import time
 
 BASE = 0
@@ -32,7 +32,7 @@ compilations = {
 @click.option('--sequence', 'mode', flag_value=SEQUENCE)
 @click.option('--axioms', 'mode', flag_value=AXIOMS)
 @click.option('--unitary', 'mode', flag_value=UNITARY)
-@profile
+# @profile
 def main(domain, problem, output, bits, mode):
     start = time.time()
     reader = PDDLReader()

@@ -1,6 +1,6 @@
 from bitblast.helpers import *
 from unified_planning.io.pddl_writer import ConverterToPDDLString, PDDLWriter
-from line_profiler import *
+# from line_profiler import *
 
 class Axiom:
     
@@ -58,7 +58,7 @@ class AxiomsCompiler:
         assert nbits >= min_bits
         self.constants = {}
     
-    @profile
+    # @profile
     def get_compiled_problem(self) -> Tuple[Problem, List[Axiom]]:
 
         self.false = Fluent("FALSE", BoolType())
