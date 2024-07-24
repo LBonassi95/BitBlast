@@ -93,5 +93,15 @@ def test_remove_unnecessary_effects():
             assert not eff.fluent == x(farm1)
 
 
+def test_normalization_mprime():
+    domain_path = Path(__file__).parent / "pddl" / "mistery_ground" / "domain.pddl"
+    problem_path = Path(__file__).parent / "pddl" / "mistery_ground" / "problem.pddl"
+    reader = PDDLReader()
+    problem = reader.parse_problem(domain_path, problem_path)
+    problem, _, _ = normalize(problem)
+
+    for a in problem.actions:
+        assert len(a.effects) >= 1
+
 if __name__ == "__main__":
-    test_remove_unnecessary_effects()
+    test_normalization_mprime()

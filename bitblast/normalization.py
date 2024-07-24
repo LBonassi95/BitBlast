@@ -177,11 +177,19 @@ def remove_unnecessary_effects(normalized_problem: Problem):
 
     unnecessary_vars = set(normalized_problem.initial_values.keys()) - set(all_var)
 
+    actions_to_remove = []
+
     for a in normalized_problem.actions:
         assert isinstance(a, InstantaneousAction)
         effects_to_remove = [eff for eff in a.effects if eff.fluent in unnecessary_vars]
         for eff in effects_to_remove:
             a.effects.remove(eff)
+        if len(a.effects) == 0:
+            actions_to_remove.append(a)
+    
+    if len(actions_to_remove) > 0:
+        for a in actions_to_remove:
+            normalized_problem.actions.remove(a)
 
     return unnecessary_vars
 
