@@ -269,7 +269,7 @@ def snp_to_rnp(problem: Problem, verbose: bool = False) -> Problem:
         static_state_variables = [v for v in all_vars if v.fluent() in static_fluents]
         state_variables = [v for v in all_vars if v.fluent() not in static_fluents]
         print('State variables:', state_variables)
-        print('Static variables:', static_state_variables)
+        print('Number of static variables:', len(static_state_variables))
         size_numeric_state_variables = len([v for v in state_variables if is_numeric_fluent(v.fluent())])
         size_boolean_state_variables = len([v for v in state_variables if not is_numeric_fluent(v.fluent())])
         print('Number of  numeric state variables:', size_numeric_state_variables)
@@ -285,7 +285,7 @@ def snp_to_rnp(problem: Problem, verbose: bool = False) -> Problem:
         static_state_variables = [v for v in all_vars if v.fluent() in static_fluents]
         state_variables = [v for v in all_vars if v.fluent() not in static_fluents]
         print('Normalized - State variables:', state_variables)
-        print('Normalized - Static variables:', static_state_variables)
+        print('Normalized - Number of static variables:', len(static_state_variables))
         size_numeric_state_variables = len([v for v in state_variables if is_numeric_fluent(v.fluent())])
         size_boolean_state_variables = len([v for v in state_variables if not is_numeric_fluent(v.fluent())])
         print('Normalized - Number of  numeric state variables:', size_numeric_state_variables)
