@@ -30,7 +30,16 @@ def get_numeric_variables(problem: Problem) -> Set[FNode]:
     
     return ground_fluents
     # return set(fl for fl in problem.fluents if is_numeric_fluent(fl))
+
+def get_all_variables(problem: Problem) -> Set[FNode]:
+    ground_fluents = set()
     
+    # TODO CHECK THIS!!!!!!!!
+    for var in problem.initial_values.keys():
+        assert isinstance(var, FNode)
+        ground_fluents.add(var)
+    
+    return ground_fluents
 
 def get_all_eff_num(problem: Problem):
 

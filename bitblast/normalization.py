@@ -157,7 +157,7 @@ def add_new_effects(act: InstantaneousAction, formula_normalizer: FormulaNormali
 def get_initial_value(expression: FNode, initial_state: UPState, state_evaluator: StateEvaluator) -> int:
     return state_evaluator.evaluate(expression, initial_state)
 
-def remove_unnecessary_effects(normalized_problem: Problem):
+def remove_unnecessary_effects(normalized_problem: Problem) -> Set[FNode]:
     '''
     Remove unnacessary effects from the actions.
     An effect is unnecessary if it changes a fluent that is not used in any precondition or goal
@@ -194,7 +194,7 @@ def remove_unnecessary_effects(normalized_problem: Problem):
     return unnecessary_vars
 
 # @profile
-def snp_to_rnp(problem: Problem) -> Problem:
+def snp_to_rnp(problem: Problem, verbose: bool = False) -> Problem:
 
     formula_normalizer = FormulaNormalizer(problem)
     state_evaluator = StateEvaluator(problem)
@@ -235,26 +235,62 @@ def snp_to_rnp(problem: Problem) -> Problem:
 
     # Remove unnecessary effects
     unnecessary_vars = remove_unnecessary_effects(normalized_problem)
-    unnecessary_vars = set([v for v in unnecessary_vars if isinstance(v, FNode) and v.fluent().type == RealType()])
 
-    vars = get_numeric_variables(problem)
-    new_vars = [v() for v in formula_normalizer.conditions_map.values()]
+    # unnecessary_fluents = {v.fluent() for v in unnecessary_vars}
+    # fluents_ok = [fl for fl in normalized_problem.fluents if fl not in unnecessary_fluents]
+    # normalized_problem.clear_fluents()
+    # normalized_problem.add_fluents(fluents_ok)
 
-    N_size = len(vars)
-    N_new_size = N_size + len(new_vars) - len(unnecessary_vars)
+    if verbose:
+        unnecessary_vars = set([v for v in unnecessary_vars if isinstance(v, FNode) and v.fluent().type == RealType()])
 
-    print('Normalization results:')
-    print('----------------------')
-    print('Numeric variables:', vars)
-    print('New variables:', new_vars)
-    print('Removed variables:', unnecessary_vars)
+        vars = get_numeric_variables(problem)
+        new_vars = [v() for v in formula_normalizer.conditions_map.values()]
 
-    print('----------------------')
-    print('|N|:', N_size)
-    print('|N_prime|:', N_new_size)
-    print(f'|N|/|N_prime|: {N_new_size/N_size:.3f}')
-    print('----------------------')
+        N_size = len(vars)
+        N_new_size = N_size + len(new_vars) - len(unnecessary_vars)
+        print('----------------------')
+        print('Normalization results:')
+        print('----------------------')
+        print('Numeric variables:', vars)
+        print('New variables:', new_vars)
+        print('Removed variables:', unnecessary_vars)
 
+        print('----------------------')
+        print('|N|:', N_size)
+        print('|N_prime|:', N_new_size)
+        print(f'|N|/|N_prime|: {N_new_size/N_size:.3f}')
+        print('----------------------')
+        print('----------------------')
+        print('Variable statistics: Input problem')
+        print('----------------------')
+        all_vars = get_all_variables(problem)
+        static_fluents = problem.get_static_fluents()
+        static_state_variables = [v for v in all_vars if v.fluent() in static_fluents]
+        state_variables = [v for v in all_vars if v.fluent() not in static_fluents]
+        print('State variables:', state_variables)
+        print('Static variables:', static_state_variables)
+        size_numeric_state_variables = len([v for v in state_variables if is_numeric_fluent(v.fluent())])
+        size_boolean_state_variables = len([v for v in state_variables if not is_numeric_fluent(v.fluent())])
+        print('Number of  numeric state variables:', size_numeric_state_variables)
+        print('Number of  boolean state variables:', size_boolean_state_variables)
+        print(f'|Fvar| / |Nvar|: {size_boolean_state_variables/size_numeric_state_variables:.3f}')
+
+        print('----------------------')
+        print('----------------------')
+        print('Variable statistics: Normalized problem')
+        print('----------------------')
+        all_vars = [v for v in get_all_variables(normalized_problem) if v not in unnecessary_vars]
+        static_fluents = problem.get_static_fluents()
+        static_state_variables = [v for v in all_vars if v.fluent() in static_fluents]
+        state_variables = [v for v in all_vars if v.fluent() not in static_fluents]
+        print('Normalized - State variables:', state_variables)
+        print('Normalized - Static variables:', static_state_variables)
+        size_numeric_state_variables = len([v for v in state_variables if is_numeric_fluent(v.fluent())])
+        size_boolean_state_variables = len([v for v in state_variables if not is_numeric_fluent(v.fluent())])
+        print('Normalized - Number of  numeric state variables:', size_numeric_state_variables)
+        print('Normalized - Number of  boolean state variables:', size_boolean_state_variables)
+        print(f'Normalized - |Fvar| / |Nvar|: {size_boolean_state_variables/size_numeric_state_variables:.3f}')
 
     return normalized_problem
 
@@ -320,7 +356,7 @@ def add_metric(problem: Problem, metric: PlanQualityMetric, metric_map: Dict[str
                 a.add_effect(condition=eff.condition, fluent=eff.fluent, value=eff.value)
 
 # @profile
-def normalize(problem: Problem) -> Tuple[Problem, PlanQualityMetric, Dict[str, List[Effect]]]:
+def normalize(problem: Problem, verbose: bool = False) -> Tuple[Problem, PlanQualityMetric, Dict[str, List[Effect]]]:
     grounder = Compiler(compilation_kind = CompilationKind.GROUNDING)
     quantifier_remover = Compiler(compilation_kind = CompilationKind.QUANTIFIERS_REMOVING)
 
@@ -336,4 +372,4 @@ def normalize(problem: Problem) -> Tuple[Problem, PlanQualityMetric, Dict[str, L
     metric, metric_map = extract_metric(ground_problem)
     #####################################
 
-    return snp_to_rnp(ground_problem), metric, metric_map
+    return snp_to_rnp(ground_problem, verbose), metric, metric_map

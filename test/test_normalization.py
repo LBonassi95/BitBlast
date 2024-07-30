@@ -103,5 +103,15 @@ def test_normalization_mprime():
     for a in problem.actions:
         assert len(a.effects) >= 1
 
+
+def test_normalization_drone():
+    domain_path = Path(__file__).parent / "pddl" / "drone" / "domain.pddl"
+    problem_path = Path(__file__).parent / "pddl" / "drone" / "problem.pddl"
+    reader = PDDLReader()
+    problem = reader.parse_problem(domain_path, problem_path)
+    problem, _, _ = normalize(problem, verbose=True)
+
+
 if __name__ == "__main__":
-    test_normalization_mprime()
+    # test_normalization_mprime()
+    test_normalization_drone()
