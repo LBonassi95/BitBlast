@@ -262,7 +262,7 @@ def snp_to_rnp(problem: Problem, verbose: bool = False) -> Problem:
         print(f'|N|/|N_prime|: {N_new_size/N_size:.3f}')
         print('----------------------')
         print('----------------------')
-        print('Variable statistics: Input problem')
+        print('Variable Input problem')
         print('----------------------')
         all_vars = get_all_variables(problem)
         static_fluents = problem.get_static_fluents()
@@ -275,10 +275,19 @@ def snp_to_rnp(problem: Problem, verbose: bool = False) -> Problem:
         print('Number of  numeric state variables:', size_numeric_state_variables)
         print('Number of  boolean state variables:', size_boolean_state_variables)
         print(f'|Fvar| / |Nvar|: {size_boolean_state_variables/size_numeric_state_variables:.3f}')
+        eff_prop = []
+        eff_num = []
+        for a in problem.actions:
+            for eff in a.effects:
+                if is_numeric_fluent(eff.fluent.fluent()):
+                    eff_num.append(eff)
+                else:
+                    eff_prop.append(eff)
+        print(f'|Eff_prop| / |Eff_num|: {len(eff_prop) / len(eff_num):.3f}')
 
         print('----------------------')
         print('----------------------')
-        print('Variable statistics: Normalized problem')
+        print('Variable Normalized problem')
         print('----------------------')
         all_vars = [v for v in get_all_variables(normalized_problem) if v not in unnecessary_vars]
         static_fluents = problem.get_static_fluents()
@@ -291,6 +300,15 @@ def snp_to_rnp(problem: Problem, verbose: bool = False) -> Problem:
         print('Normalized - Number of  numeric state variables:', size_numeric_state_variables)
         print('Normalized - Number of  boolean state variables:', size_boolean_state_variables)
         print(f'Normalized - |Fvar| / |Nvar|: {size_boolean_state_variables/size_numeric_state_variables:.3f}')
+        eff_prop = []
+        eff_num = []
+        for a in normalized_problem.actions:
+            for eff in a.effects:
+                if is_numeric_fluent(eff.fluent.fluent()):
+                    eff_num.append(eff)
+                else:
+                    eff_prop.append(eff)
+        print(f'Normalized - |Eff_prop| / |Eff_num|: {len(eff_prop) / len(eff_num):.3f}')
 
     return normalized_problem
 
