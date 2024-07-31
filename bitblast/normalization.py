@@ -274,7 +274,7 @@ def snp_to_rnp(problem: Problem, verbose: bool = False) -> Problem:
         size_boolean_state_variables = len([v for v in state_variables if not is_numeric_fluent(v.fluent())])
         print('Number of  numeric state variables:', size_numeric_state_variables)
         print('Number of  boolean state variables:', size_boolean_state_variables)
-        print(f'|Fvar| / |Nvar|: {size_boolean_state_variables/size_numeric_state_variables:.3f}')
+        print(f'Var ratio: {size_numeric_state_variables/(size_boolean_state_variables+size_numeric_state_variables):.3f}')
         eff_prop = []
         eff_num = []
         for a in problem.actions:
@@ -283,7 +283,7 @@ def snp_to_rnp(problem: Problem, verbose: bool = False) -> Problem:
                     eff_num.append(eff)
                 else:
                     eff_prop.append(eff)
-        print(f'|Eff_prop| / |Eff_num|: {len(eff_prop) / len(eff_num):.3f}')
+        print(f'Eff ratio: {len(eff_num) / (len(eff_num) + len(eff_prop)):.3f}')
 
         print('----------------------')
         print('----------------------')
@@ -299,7 +299,7 @@ def snp_to_rnp(problem: Problem, verbose: bool = False) -> Problem:
         size_boolean_state_variables = len([v for v in state_variables if not is_numeric_fluent(v.fluent())])
         print('Normalized - Number of  numeric state variables:', size_numeric_state_variables)
         print('Normalized - Number of  boolean state variables:', size_boolean_state_variables)
-        print(f'Normalized - |Fvar| / |Nvar|: {size_boolean_state_variables/size_numeric_state_variables:.3f}')
+        print(f'Normalized - Var ratio: {size_numeric_state_variables/(size_boolean_state_variables+size_numeric_state_variables):.3f}')
         eff_prop = []
         eff_num = []
         for a in normalized_problem.actions:
@@ -308,7 +308,7 @@ def snp_to_rnp(problem: Problem, verbose: bool = False) -> Problem:
                     eff_num.append(eff)
                 else:
                     eff_prop.append(eff)
-        print(f'Normalized - |Eff_prop| / |Eff_num|: {len(eff_prop) / len(eff_num):.3f}')
+        print(f'Normalized - Eff ratio: {len(eff_num) / (len(eff_num) + len(eff_prop)):.3f}')
 
     return normalized_problem
 
