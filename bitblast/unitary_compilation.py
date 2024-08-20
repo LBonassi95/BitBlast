@@ -124,9 +124,9 @@ def get_unitary_actions(actions, machinery_map, obj_domain):
                     cond_form = And(past_cond)
                     new_action.add_effect(condition=cond_form, fluent=futu_cond, value=TRUE())
                     new_action.add_effect(condition=cond_form, fluent=past_cond, value=FALSE())
-                    if j >= 0:
+                    if i < 0 and j >= 0:
                         new_action.add_effect(condition=cond_form, fluent=geq_var, value=TRUE())
-                    else:
+                    elif i >= 0 and j < 0:
                         new_action.add_effect(condition=cond_form, fluent=geq_var, value=FALSE())
                 elif j < obj_domain[0] or j > obj_domain[-1]:
                     past_cond = machinery_map["levels"][get_ground_fluent_name(nvar)][i]
