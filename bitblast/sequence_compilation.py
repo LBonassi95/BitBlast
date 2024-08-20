@@ -121,7 +121,6 @@ def get_bit_carry_variables(numeric_variables: Set[FNode],
         machinery_map["done"][i] = done_i
 
     # carry
-    # TODO: aggiungi solo carry necessari
     for nvar in numeric_variables:
         nvar_name = get_ground_fluent_name(nvar)
         carries   = [Fluent(f"carry_{nvar_name}_{i}") for i in range(-1, nbits)]

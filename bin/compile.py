@@ -29,7 +29,7 @@ compilations = {
 @click.argument('output')
 @click.option('--bits', type=int, required=True)
 @click.option('--base', 'mode', flag_value=BASE, default=True)
-@click.option('--sequence', 'mode', flag_value=SEQUENCE)
+# @click.option('--sequence', 'mode', flag_value=SEQUENCE)
 @click.option('--axioms', 'mode', flag_value=AXIOMS)
 @click.option('--unitary', 'mode', flag_value=UNITARY)
 # @profile

@@ -57,17 +57,17 @@ Specifically, `--unitary` runs One-Hot, while `--axioms` runs Blast_x.
 To compile the first instance of Counters using Blast with 8 bits run
 
 ```
-python ./bin/compile.py benchmark/counters/domain.pddl benchmark/counters/pfile1.pddl . --bits 8
+python ./bin/compile.py benchmark/Counters/instances/domain.pddl benchmark/Counters/instances/pfile1.pddl . --bits 8
 ```
 
 To compile the same instance with Blast_x run
 
 ```
-python ./bin/compile.py benchmark/counters/domain.pddl benchmark/counters/pfile1.pddl . --bits 8 --axioms
+python ./bin/compile.py benchmark/Counters/instances/domain.pddl benchmark/Counters/instances/pfile1.pddl . --bits 8 --axioms
 ```
 
 To use OneHot with the numeric domain D = [-128, 127] run
 
 ```
-python ./bin/compile.py benchmark/counters/domain.pddl benchmark/counters/pfile1.pddl . --bits 8 --unitary
+python ./bin/compile.py benchmark/Counters/instances/domain.pddl benchmark/Counters/instances/pfile1.pddl . --bits 8 --unitary
 ```
