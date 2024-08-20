@@ -19,7 +19,9 @@ We tested the compiler with Python 3.10.
 
 Install the necessary dependencies
 
-```pip install unified-planning click sympy --no-cache-dir```
+```
+pip install unified-planning click sympy --no-cache-dir
+```
 
 
 Switch to the "BitBlast" directory and install the library.
