@@ -121,10 +121,10 @@ class AxiomsCompiler:
         for eff_label, eff in enumerate(numeric_effects):
             
             carry_axioms, sum_axioms, overflow_axioms, var_to_dp_map = self.compute_effect_axioms(eff, eff_label)
-            all_axioms += carry_axioms + sum_axioms + overflow_axioms
+            all_axioms += carry_axioms + sum_axioms
 
             effects_axioms_map[eff] = var_to_dp_map
-            overflow_effect_map[eff] = overflow_axioms[0].get_derived_fluent()
+            overflow_effect_map[eff] = overflow_axioms[0]
 
         return all_axioms, effects_axioms_map, overflow_effect_map
 
@@ -165,12 +165,11 @@ class AxiomsCompiler:
             # sign_sum = circuit["z"][sum_fl(len(x_bits)-1, eff_label)]
             sign_sum = sum_fl(len(x_bits)-1, eff_label)
 
-            of_head = Fluent(f'of_{eff_label}', BoolType())
             of_body = Or(And(sign_x, sign_q, Not(sign_sum)), And(Not(sign_x), Not(sign_q), sign_sum))
             # of_body = Or(And(sign_x, sign_q, Not(sign_sum)), And(Not(sign_x), Not(sign_q), sign_sum))
-            overflow_axiom = Axiom(of_head, of_body)
+            # overflow_axiom = Axiom(of_head, of_body)
 
-            return carry_axioms, sum_axioms, [overflow_axiom], var_to_dp_map
+            return carry_axioms, sum_axioms, [of_body], var_to_dp_map
 
     
 
