@@ -66,3 +66,18 @@ To use OneHot with the numeric domain D = [-128, 127] run
 ```
 python ./bin/compile.py benchmark/Counters/instances/domain.pddl benchmark/Counters/instances/pfile1.pddl . --bits 8 --unitary
 ```
+
+## How to cite our work
+
+```
+@inproceedings{DBLP:conf/aaai/BonassiPS25,
+  author       = {Luigi Bonassi and
+                  Francesco Percassi and
+                  Enrico Scala},
+  title        = {Towards Practical Classical Planning Compilations of Numeric Planning},
+  booktitle    = {{AAAI}},
+  pages        = {26472--26480},
+  publisher    = {{AAAI} Press},
+  year         = {2025}
+}
+```
