@@ -71,7 +71,7 @@ class AxiomsCompiler:
             self.new_variables_map, self.problem.initial_values, self.nbits, self.flipped)
 
         # New axioms
-        self.all_axioms, self.effects_axioms_map = self.compute_axioms()
+        self.all_axioms, self.effects_axioms_map, self.overflow_effects_map = self.compute_axioms()
 
         # New actions
         new_actions = [self.convert_action(action) for action in self.problem.actions]
@@ -112,6 +112,7 @@ class AxiomsCompiler:
 
     def compute_axioms(self):
         effects_axioms_map = {}
+        overflow_effect_map = {}
         all_axioms = []
         numeric_effects = get_all_eff_num(self.problem)
 
@@ -120,13 +121,14 @@ class AxiomsCompiler:
         for eff_label, eff in enumerate(numeric_effects):
             
             carry_axioms, sum_axioms, overflow_axioms, var_to_dp_map = self.compute_effect_axioms(eff, eff_label)
-            all_axioms += carry_axioms + sum_axioms + overflow_axioms
+            all_axioms += carry_axioms + sum_axioms
 
             effects_axioms_map[eff] = var_to_dp_map
+            overflow_effect_map[eff] = overflow_axioms[0]
 
-        return all_axioms, effects_axioms_map
+        return all_axioms, effects_axioms_map, overflow_effect_map
 
-    def compute_effect_axioms(self, eff: Effect, eff_label: int, optimized: bool = False) -> List[Axiom]:
+    def compute_effect_axioms(self, eff: Effect, eff_label: int, optimized: bool = False) -> Tuple [List[Axiom], List[Axiom], List[Axiom], Dict[Fluent, Fluent]]:
 
         x_bits = self.new_variables_map[eff.fluent]
         q_bits = bitblast_int(constant_value(eff.value), len(x_bits), self.flipped)
@@ -139,34 +141,37 @@ class AxiomsCompiler:
         sum_axioms = [Axiom(sum_fl(i, eff_label), circuit["z"][sum_fl(i, eff_label)]) for i in range(len(x_bits))]
 
         if optimized:
-            var_to_dp_map = {x_bits[i]: circuit["z"][sum_fl(i, eff_label)] for i in range(len(x_bits))}
+            # var_to_dp_map = {x_bits[i]: circuit["z"][sum_fl(i, eff_label)] for i in range(len(x_bits))}
 
-            sign_x = sign_bit(x_bits)
-            sign_q = sign_bit(q_bits)
-            sign_sum = circuit["z"][sum_fl(len(x_bits)-1, eff_label)]
+            # sign_x = sign_bit(x_bits)
+            # sign_q = sign_bit(q_bits)
+            # sign_sum = circuit["z"][sum_fl(len(x_bits)-1, eff_label)]
 
-            # of_head = Fluent(f'of_{eff_label}', BoolType())
-            # of_body = Or(And(sign_x, sign_q, Not(sign_sum)), And(Not(sign_x), Not(sign_q), sign_sum))
-            # of_body = Or(And(sign_x, sign_q, Not(sign_sum)), And(Not(sign_x), Not(sign_q), sign_sum))
-            # overflow_axiom = Axiom(of_head, of_body)
+            # # of_head = Fluent(f'of_{eff_label}', BoolType())
+            # # of_body = Or(And(sign_x, sign_q, Not(sign_sum)), And(Not(sign_x), Not(sign_q), sign_sum))
+            # # of_body = Or(And(sign_x, sign_q, Not(sign_sum)), And(Not(sign_x), Not(sign_q), sign_sum))
+            # # overflow_axiom = Axiom(of_head, of_body)
 
-            var_to_dp_map[FluentExp(OF_FLUENT)] = Or(And(sign_x, sign_q, Not(sign_sum)), And(Not(sign_x), Not(sign_q), sign_sum))
+            # var_to_dp_map[FluentExp(OF_FLUENT)] = Or(And(sign_x, sign_q, Not(sign_sum)), And(Not(sign_x), Not(sign_q), sign_sum))
 
-            # return carry_axioms, sum_axioms, [overflow_axiom], var_to_dp_map
-            return carry_axioms, [], [], var_to_dp_map
+            # # return carry_axioms, sum_axioms, [overflow_axiom], var_to_dp_map
+            # return carry_axioms, [], [], var_to_dp_map
+            raise NotImplementedError
 
         else:
             var_to_dp_map = {x_bits[i]: sum_fl(i, eff_label) for i in range(len(x_bits))}
             sign_x = sign_bit(x_bits)
             sign_q = sign_bit(q_bits)
-            sign_sum = circuit["z"][sum_fl(len(x_bits)-1, eff_label)]
+            # sign_sum = circuit["z"][sum_fl(len(x_bits)-1, eff_label)]
+            sign_sum = sum_fl(len(x_bits)-1, eff_label)
 
-            of_head = Fluent(f'of_{eff_label}', BoolType())
             of_body = Or(And(sign_x, sign_q, Not(sign_sum)), And(Not(sign_x), Not(sign_q), sign_sum))
-            of_body = Or(And(sign_x, sign_q, Not(sign_sum)), And(Not(sign_x), Not(sign_q), sign_sum))
-            overflow_axiom = Axiom(of_head, of_body)
+            # of_body = Or(And(sign_x, sign_q, Not(sign_sum)), And(Not(sign_x), Not(sign_q), sign_sum))
+            # overflow_axiom = Axiom(of_head, of_body)
 
-            return carry_axioms, sum_axioms, [overflow_axiom], var_to_dp_map
+            ####
+
+            return carry_axioms, sum_axioms, [of_body], var_to_dp_map
 
     
 
@@ -184,6 +189,8 @@ class AxiomsCompiler:
             for var, dp in self.effects_axioms_map[eff].items():
                 new_action.add_effect(condition=dp, fluent=var, value=TRUE())
                 new_action.add_effect(condition=Not(dp), fluent=var, value=FALSE())
+            
+            new_action.add_effect(condition=self.overflow_effects_map[eff], fluent=FluentExp(OF_FLUENT), value=TRUE())
         
         for eff in effects_prop(action=act):
             new_action.add_effect(condition=eff.condition, fluent=eff.fluent, value=eff.value)
